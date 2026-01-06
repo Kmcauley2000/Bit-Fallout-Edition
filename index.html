@@ -343,6 +343,8 @@
       box-shadow: 0 20px 60px rgba(0,0,0,.55);
       border:1px solid rgba(31,58,42,.9);
       padding:0;
+      max-height: 92vh;
+      overflow: hidden;
     }
     dialog::backdrop{ background: rgba(0,0,0,.55); backdrop-filter: blur(2px); }
     .modalHeader{
@@ -354,7 +356,16 @@
       gap:10px;
     }
     .modalHeader h3{ margin:0; font-family:var(--mono); font-size:0.95rem; color:var(--accent); }
-    .modalBody{ padding:12px 14px 14px; }
+    .modalBody{padding:12px 14px 14px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      max-height: calc(92vh - 56px);
+    }
+
+    /* Mobile menu usability */
+    .modalBody .rows{ overflow: visible; }
+    .modalBody .btn{ min-height:48px; }
+    .modalHeader{ position: sticky; top: 0; z-index: 5; background: linear-gradient(180deg, rgba(16,26,20,.98), rgba(10,16,13,.98)); }
     .modalBody p{ margin:0 0 10px; color:var(--text); opacity:.92; font-size:0.88rem; line-height:1.35; }
     .closeBtn{
       border:1px solid rgba(31,58,42,.85);
@@ -738,7 +749,8 @@
       if (t - last < 240) return;
       last = t;
       handler(ev);
-    };
+      queueSave();
+};
     el.addEventListener("pointerdown", (ev) => {
       if (ev.pointerType === "mouse" && ev.button !== 0) return;
       fire(ev);
@@ -1983,6 +1995,35 @@ function addRep(id, amount){
     return true;
   }
 
+  // ---------- Robust autosave (mobile-friendly) ----------
+  let _dirty = false;
+  let _saveTimer = null;
+
+  function queueSave(){
+    _dirty = true;
+    if (_saveTimer) return;
+    _saveTimer = setTimeout(() => flushSave(), 1500);
+  }
+
+  function flushSave(){
+    if (_saveTimer){ clearTimeout(_saveTimer); _saveTimer = null; }
+    if (!_dirty) return;
+    try { save(); } catch {}
+    _dirty = false;
+  }
+
+  // iOS Safari sometimes only persists storage after a user gesture
+  document.addEventListener("pointerdown", () => {
+    try { localStorage.setItem("bf_initialized", "1"); } catch {}
+  }, { once:true });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushSave();
+  });
+  window.addEventListener("pagehide", flushSave);
+  window.addEventListener("beforeunload", flushSave);
+
+
   function migrateSave(data){
     if (!data || !data.version) return null;
 
@@ -2085,7 +2126,9 @@ function addRep(id, amount){
     if (!key || !act) return;
     assignWorker(key, act === "plus" ? +1 : -1);
     renderAll();
-  });
+  
+    queueSave();
+});
 
   $("buildPanel").addEventListener("click", (e) => {
     const btn = e.target.closest("button");
@@ -2094,7 +2137,9 @@ function addRep(id, amount){
     if (!key) return;
     buyBuilding(key);
     renderAll();
-  });
+  
+    queueSave();
+});
 
   $("techPanel").addEventListener("click", (e) => {
     const btn = e.target.closest("button");
@@ -2103,7 +2148,9 @@ function addRep(id, amount){
     if (!key) return;
     buyTech(key);
     renderAll();
-  });
+  
+    queueSave();
+});
 
   // Also listen on factionSummary so the Contract "Collect" button always works
   $("factionSummary").addEventListener("click", (e) => {
@@ -2116,7 +2163,9 @@ function addRep(id, amount){
     if (act === "collect") {
       collectContract();
       renderAll();
-      return;
+      
+      queueSave();
+return;
     }
 
     const id = btn.dataset.factId;
@@ -2131,7 +2180,9 @@ function addRep(id, amount){
     if (act === "opq") startContract(id, 0);
     if (act === "opd") startContract(id, 1);
     renderAll();
-  });
+  
+    queueSave();
+});
 
   $("factionPanel").addEventListener("click", (e) => {
     const btn = e.target.closest("button");
@@ -2150,7 +2201,9 @@ function addRep(id, amount){
     if (act === "opd") startContract(id, 1);
     if (act === "collect") collectContract();
     renderAll();
-  });
+  
+      queueSave();
+});
 
   // ---------- Menu modal (save/export/import/reset/help) ----------
   const modal = $("modal");
