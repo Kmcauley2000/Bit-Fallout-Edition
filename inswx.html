@@ -1,0 +1,2156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Wasteland Outpost — Idle Settlement Builder</title>
+  <style>
+    :root{
+      --bg:#0b0f0c;
+      --panel:#101a14;
+      --panel2:#0d1511;
+      --text:#d7f7da;
+      --muted:#92c79b;
+      --accent:#3cff7a;
+      --warn:#ffcc66;
+      --danger:#ff6b6b;
+      --line:#1f3a2a;
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+      --radius:18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    *{ box-sizing:border-box; }
+    html{
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      font-size: 18px;
+    }
+    @supports (font-size: clamp(16px, 2vw, 20px)) {
+      html{ font-size: clamp(18px, 1.8vw + 10px, 22px); }
+    }
+    body{
+      margin:0;
+      background: radial-gradient(1200px 700px at 20% 0%, rgba(60,255,122,.10), transparent 55%),
+                  radial-gradient(900px 600px at 95% 20%, rgba(255,204,102,.08), transparent 55%),
+                  linear-gradient(180deg, #070a08, var(--bg));
+      color:var(--text);
+      font-family:var(--sans);
+      min-height:100vh;
+      padding-bottom: calc(92px + env(safe-area-inset-bottom));
+    }
+
+    /* Top HUD */
+    header{
+      padding: calc(18px + env(safe-area-inset-top)) 16px 10px;
+      position:sticky;
+      top:0;
+      background: linear-gradient(180deg, rgba(11,15,12,.92), rgba(11,15,12,.65));
+      backdrop-filter: blur(6px);
+      border-bottom:1px solid rgba(31,58,42,.7);
+      z-index:10;
+    }
+    .toprow{
+      display:flex;
+      gap:12px;
+      align-items:flex-end;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .title h1{
+      margin:0;
+      font-family:var(--mono);
+      letter-spacing:.5px;
+      font-size: 1.15rem;
+      color:var(--accent);
+      text-shadow: 0 0 14px rgba(60,255,122,.18);
+    }
+    .subtitle{
+      margin:0;
+      color:var(--muted);
+      font-size:0.78rem;
+      line-height:1.35;
+    }
+    .pillbar{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .pill{
+      border:1px solid rgba(31,58,42,.9);
+      background: linear-gradient(180deg, rgba(16,26,20,.85), rgba(13,21,17,.85));
+      border-radius:999px;
+      padding:10px 12px;
+      box-shadow: var(--shadow);
+      font-family:var(--mono);
+      font-size:0.78rem;
+      color:var(--text);
+      display:flex;
+      gap:8px;
+      align-items:center;
+      white-space:nowrap;
+    }
+    .pill b{ color:var(--accent); font-weight:700; }
+
+    /* Layout */
+    .wrap{
+      padding: 16px 16px calc(96px + env(safe-area-inset-bottom));
+      max-width:900px;
+      margin:0 auto;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+
+    /* Cards */
+    .card{
+      background: linear-gradient(180deg, rgba(16,26,20,.92), rgba(13,21,17,.92));
+      border:1px solid rgba(31,58,42,.9);
+      border-radius:var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .cardHeader{
+      padding: 16px 16px 10px;
+      border-bottom:1px solid rgba(31,58,42,.45);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .cardHeader h2{
+      margin:0;
+      font-family:var(--mono);
+      font-size:0.9rem;
+      letter-spacing:.4px;
+      color:var(--text);
+    }
+    .cardBody{ padding: 12px 16px 16px; }
+
+    /* Buttons & rows */
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 520px){
+      .grid{ grid-template-columns:1fr; }
+      .pillbar{ justify-content:flex-start; }
+    }
+    .btn{
+      -webkit-tap-highlight-color: transparent;
+      border:1px solid rgba(60,255,122,.35);
+      background: linear-gradient(180deg, rgba(60,255,122,.18), rgba(60,255,122,.06));
+      color:var(--text);
+      border-radius:16px;
+      padding:14px 14px;
+      font-family:var(--mono);
+      cursor:pointer;
+      box-shadow: 0 10px 24px rgba(0,0,0,.22);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      transition: transform .08s ease, border-color .2s ease, background .2s ease;
+      user-select:none;
+      min-height:64px;
+      touch-action: manipulation;
+      width:100%;
+      text-align:left;
+    }
+    .btn:active{ transform: translateY(1px) scale(.99); }
+    .btn[disabled]{ opacity:.55; cursor:not-allowed; transform:none; }
+    .btn small{
+      color:var(--muted);
+      font-size:0.78rem;
+      font-family:var(--sans);
+      line-height:1.15;
+      text-align:right;
+      white-space:nowrap;
+    }
+    .btn .left{ display:flex; flex-direction:column; gap:4px; }
+    .btn .name{ font-size:0.95rem; color:var(--accent); }
+    .btn .desc{ font-family:var(--sans); font-size:0.85rem; line-height:1.25; color:var(--text); opacity:.92; }
+
+    .rows{ display:flex; flex-direction:column; gap:10px; }
+    .row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid rgba(31,58,42,.85);
+      background: linear-gradient(180deg, rgba(13,21,17,.85), rgba(10,16,13,.85));
+      font-family:var(--mono);
+      font-size:0.8rem;
+      line-height:1.25;
+    }
+    .row .label{ color:var(--muted); }
+    .row .value{ color:var(--text); }
+    .tag{
+      font-family:var(--mono);
+      font-size:0.72rem;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(31,58,42,.9);
+      color:var(--muted);
+      background: rgba(0,0,0,.15);
+    }
+    .divider{ height:1px; background: rgba(31,58,42,.8); margin:14px 0; }
+
+    /* Log */
+    .log{
+      max-height:380px;
+      overflow:auto;
+      border-radius:16px;
+      border:1px solid rgba(31,58,42,.85);
+      background: linear-gradient(180deg, rgba(10,16,13,.78), rgba(7,10,8,.78));
+      padding:12px;
+      font-family:var(--mono);
+      font-size:0.78rem;
+      line-height:1.45;
+      -webkit-overflow-scrolling: touch;
+    }
+    .log p{ margin:0 0 10px; color:var(--text); }
+    .log p span{ color:var(--muted); }
+
+    /* Bottom tab bar */
+    .tabbar{
+      position:fixed;
+      left:0; right:0; bottom:0;
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+      background: linear-gradient(180deg, rgba(11,15,12,.0), rgba(11,15,12,.92) 40%, rgba(11,15,12,.98));
+      border-top:1px solid rgba(31,58,42,.75);
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      z-index:12;
+      backdrop-filter: blur(6px);
+    }
+    .tab{
+      border:1px solid rgba(31,58,42,.85);
+      background: linear-gradient(180deg, rgba(16,26,20,.9), rgba(13,21,17,.9));
+      border-radius:16px;
+      padding:12px 12px;
+      font-family:var(--mono);
+      color:var(--text);
+      cursor:pointer;
+      font-size:0.82rem;
+      min-height:48px;
+      touch-action: manipulation;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .tab.active{
+      border-color: rgba(60,255,122,.55);
+      box-shadow: 0 0 0 1px rgba(60,255,122,.12), 0 10px 24px rgba(0,0,0,.24);
+    }
+    .tab .dot{
+      width:8px; height:8px; border-radius:999px;
+      background: rgba(146,199,155,.65);
+    }
+    .tab.active .dot{ background: var(--accent); }
+
+    /* Screens */
+    .screen{ display:none; }
+    .screen.active{ display:block; }
+
+    /* Factions */
+    .bar{
+      height:12px;
+      border-radius:999px;
+      border:1px solid rgba(31,58,42,.85);
+      background: rgba(0,0,0,.25);
+      overflow:hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    .barFill{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(60,255,122,.15), rgba(60,255,122,.9));
+    }
+    .factionMeta{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top:10px;
+    }
+    .miniBtns{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .miniBtn{
+      border:1px solid rgba(31,58,42,.85);
+      background: rgba(0,0,0,.16);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:14px;
+      cursor:pointer;
+      font-family:var(--mono);
+      font-size:0.78rem;
+      min-height:44px;
+      touch-action: manipulation;
+    }
+    .miniBtn.primary{
+      border-color: rgba(60,255,122,.45);
+      background: linear-gradient(180deg, rgba(60,255,122,.16), rgba(60,255,122,.06));
+    }
+    .miniBtn.danger{
+      border-color: rgba(255,107,107,.55);
+    }
+    .miniBtn[disabled]{ opacity:.55; cursor:not-allowed; }
+
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(31,58,42,.85);
+      background: rgba(0,0,0,.18);
+      font-family:var(--mono);
+      font-size:0.72rem;
+      color:var(--text);
+      white-space:nowrap;
+    }
+    .chip.good{ border-color: rgba(60,255,122,.45); }
+    .chip.warn{ border-color: rgba(255,204,102,.55); color: var(--warn); }
+    .chip.danger{ border-color: rgba(255,107,107,.55); color: var(--danger); }
+    .pulse{
+      animation:pulseGlow 1.2s ease-in-out infinite;
+    }
+    @keyframes pulseGlow{
+      0%,100%{ box-shadow: 0 0 0 rgba(60,255,122,.0); }
+      50%{ box-shadow: 0 0 18px rgba(60,255,122,.18); }
+    }
+    .bar.small{ height:8px; }
+
+    /* Modal */
+    dialog{
+      width:min(720px, calc(100vw - 24px));
+      border:none;
+      border-radius:22px;
+      background: linear-gradient(180deg, rgba(16,26,20,.98), rgba(10,16,13,.98));
+      color:var(--text);
+      box-shadow: 0 20px 60px rgba(0,0,0,.55);
+      border:1px solid rgba(31,58,42,.9);
+      padding:0;
+    }
+    dialog::backdrop{ background: rgba(0,0,0,.55); backdrop-filter: blur(2px); }
+    .modalHeader{
+      padding:14px 14px 10px;
+      border-bottom:1px solid rgba(31,58,42,.8);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+    .modalHeader h3{ margin:0; font-family:var(--mono); font-size:0.95rem; color:var(--accent); }
+    .modalBody{ padding:12px 14px 14px; }
+    .modalBody p{ margin:0 0 10px; color:var(--text); opacity:.92; font-size:0.88rem; line-height:1.35; }
+    .closeBtn{
+      border:1px solid rgba(31,58,42,.85);
+      background: rgba(0,0,0,.18);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:14px;
+      cursor:pointer;
+      font-family:var(--mono);
+      font-size:0.8rem;
+      touch-action: manipulation;
+      min-height:44px;
+      min-width:44px;
+    }
+    .kbd{
+      font-family:var(--mono);
+      padding:2px 8px;
+      border-radius:10px;
+      border:1px solid rgba(31,58,42,.85);
+      background: rgba(0,0,0,.2);
+      color:var(--muted);
+      font-size:0.75rem;
+    }
+  
+    /* --- Factions: clearer button hierarchy + hard-lock UI --- */
+    .fActions{ margin-top:10px; display:flex; flex-direction:column; gap:10px; }
+    .fbtn{
+      width:100%;
+      min-height:54px;
+      border-radius:14px;
+      padding:12px 14px;
+      font-family:var(--mono);
+      color: var(--text);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      -webkit-appearance: none;
+      appearance: none;
+      touch-action:manipulation;
+      border:1px solid rgba(44, 112, 68, .55);
+      background:linear-gradient(180deg, rgba(8,16,12,.9), rgba(6,10,8,.92));
+      box-shadow: 0 10px 24px rgba(0,0,0,.28);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      cursor:pointer;
+    }
+    .fbtnPrimary{
+      border-color: rgba(60,255,122,.65);
+      background: linear-gradient(180deg, rgba(60,255,122,.22), rgba(60,255,122,.08));
+      box-shadow: 0 0 0 1px rgba(60,255,122,.18), 0 12px 30px rgba(0,0,0,.34);
+    }
+    .fbtnDanger{
+      border-color: rgba(255,107,107,.65);
+      background: linear-gradient(180deg, rgba(255,107,107,.20), rgba(255,107,107,.06));
+      box-shadow: 0 0 0 1px rgba(255,107,107,.16), 0 12px 30px rgba(0,0,0,.34);
+    }
+    .fbtnSecondary{
+      min-height:48px;
+      border-color: rgba(31,58,42,.95);
+      color: var(--muted);
+      font-weight: 800;
+      background: linear-gradient(180deg, rgba(16,26,20,.78), rgba(13,21,17,.78));
+      opacity: .98;
+      box-shadow:none;
+    }
+    .actionRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    /* In the 3-button row we want a clear horizontal hierarchy, not full-width stacked buttons */
+    .actionRow .fbtn{ width:auto; }
+    .actionRow > .fbtn{ flex: 1 1 120px; }
+    .fbtn[disabled]{
+      opacity:.42;
+      filter:saturate(.6);
+      cursor:not-allowed;
+    }
+
+    /* Make it obvious these are clickable (iOS needs this sometimes) */
+    .fbtn:active{ transform: translateY(1px) scale(.99); }
+    .lockHint{
+      margin-top:-2px;
+      font-family:var(--mono);
+      font-size:.72rem;
+      color:var(--warn);
+      opacity:.95;
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="toprow">
+      <div class="title">
+        <h1>WASTELAND OUTPOST</h1>
+        <p class="subtitle">A Fallout‑inspired idle settlement builder (original).</p>
+      </div>
+      <div class="pillbar" id="topPills"></div>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- CLICKER / RESOURCES -->
+    <section class="screen active" id="screen-clicker">
+      <div class="card">
+        <div class="cardHeader"><h2>Scavenge</h2><span class="tag">Tap & automate</span></div>
+        <div class="cardBody">
+          <div class="grid">
+            <button class="btn" id="btnScavenge">
+              <div class="left">
+                <div class="name">Scavenge</div>
+                <div class="desc">Tap for Scrap + Food (+ a chance of Tech)</div>
+              </div>
+              <small><span class="kbd">tap</span><br/>+ loot</small>
+            </button>
+
+            <button class="btn" id="btnPurify">
+              <div class="left">
+                <div class="name">Purify Water</div>
+                <div class="desc">Convert Scrap into Clean Water</div>
+              </div>
+              <small id="purifyCost"></small>
+            </button>
+
+            <button class="btn" id="btnRecruit">
+              <div class="left">
+                <div class="name">Recruit Drifter</div>
+                <div class="desc">Spend Food + Water to grow population</div>
+              </div>
+              <small id="recruitCost"></small>
+            </button>
+
+            
+            <button class="btn" id="btnTrade">
+              <div class="left">
+                <div class="name">Trade Scrap</div>
+                <div class="desc">Swap Scrap for Caps (early economy)</div>
+              </div>
+              <small id="tradeCost"></small>
+            </button>
+
+            <button class="btn" id="btnHealRad">
+              <div class="left">
+                <div class="name">Decontaminate</div>
+                <div class="desc">Spend Water to reduce Radiation</div>
+              </div>
+              <small id="deconCost"></small>
+            </button>
+          </div>
+
+          <div class="divider"></div>
+          <div class="rows" id="workerPanel"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BUILDINGS -->
+    <section class="screen" id="screen-build">
+      <div class="card">
+        <div class="cardHeader"><h2>Build</h2><span class="tag">Housing · Economy · Defense</span></div>
+        <div class="cardBody">
+          <div class="rows" id="buildPanel"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BATTLE -->
+    <section class="screen" id="screen-battle">
+      <div class="card">
+        <div class="cardHeader"><h2>Battle</h2><span class="tag">Raids</span></div>
+        <div class="cardBody">
+          <div class="rows" id="battleStats"></div>
+          <div class="divider"></div>
+          <button class="btn" id="btnRaid">
+            <div class="left">
+              <div class="name">Raid Nearby Camp</div>
+              <div class="desc">Risk a fight to win loot (needs militia)</div>
+            </div>
+            <small id="raidHint"></small>
+          </button>
+          <div class="divider"></div>
+          <div class="rows" id="battleTips"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TECH -->
+    <section class="screen" id="screen-tech">
+      <div class="card">
+        <div class="cardHeader"><h2>Tech</h2><span class="tag">Upgrades</span></div>
+        <div class="cardBody">
+          <div class="rows" id="techPanel"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FACTIONS -->
+    <section class="screen" id="screen-factions">
+      <div class="card">
+        <div class="cardHeader"><h2>Factions</h2><span class="tag">Allies · Reputation</span></div>
+        <div class="cardBody">
+          <div class="rows" id="factionSummary"></div>
+          <div class="divider"></div>
+          <div class="rows" id="factionPanel"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOG / STATS -->
+    <section class="screen" id="screen-log">
+      <div class="card">
+        <div class="cardHeader"><h2>Outpost</h2><span class="tag">Stats & Log</span></div>
+        <div class="cardBody">
+          <div class="rows" id="statRows"></div>
+          <div class="divider"></div>
+          <div class="log" id="log"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="tabbar" aria-label="Menus">
+    <button class="tab active" data-screen="clicker"><span class="dot"></span>Resources</button>
+    <button class="tab" data-screen="build"><span class="dot"></span>Build</button>
+    <button class="tab" data-screen="battle"><span class="dot"></span>Battle</button>
+    <button class="tab" data-screen="tech"><span class="dot"></span>Tech</button>
+    <button class="tab" data-screen="factions"><span class="dot"></span>Factions</button>
+    <button class="tab" data-screen="log"><span class="dot"></span>Log</button>
+    <button class="tab" id="btnMenu"><span class="dot"></span>Menu</button>
+  </nav>
+
+  <dialog id="modal">
+    <div class="modalHeader">
+      <h3 id="modalTitle">Menu</h3>
+      <button class="closeBtn" id="modalClose">Close</button>
+    </div>
+    <div class="modalBody" id="modalBody"></div>
+  </dialog>
+
+<script>
+(() => {
+  // ---------- Utilities ----------
+  const $ = (id) => document.getElementById(id);
+  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+  const fmt = (n) => {
+    if (!isFinite(n)) return "∞";
+    if (Math.abs(n) < 1000) return (Math.round(n * 10) / 10).toString();
+    const units = ["K","M","B","T"];
+    let u = -1;
+    let x = n;
+    while (Math.abs(x) >= 1000 && u < units.length - 1) { x /= 1000; u++; }
+    return (Math.round(x * 10) / 10) + units[u];
+  };
+  const now = () => Date.now();
+
+  // ---------- CivCrafter Momentum ----------
+  function syncMomentum(){
+    // Decay 1 momentum every 6s of inactivity
+    const t = now();
+    if (!S.momentumLastTick) S.momentumLastTick = t;
+    const dt = t - S.momentumLastTick;
+    const steps = Math.floor(dt / 6000);
+    if (steps > 0){
+      S.momentum = Math.max(0, (S.momentum || 0) - steps);
+      S.momentumLastTick += steps * 6000;
+    }
+  }
+
+  function addMomentum(n=1){
+    syncMomentum();
+    S.momentum = clamp((S.momentum || 0) + n, 0, 10);
+    S.momentumLastTick = now();
+  }
+
+  function momentumMult(){
+    syncMomentum();
+    return 1 + ((S.momentum || 0) * 0.01); // +0% .. +10%
+  }
+
+  function repMilestone10(rep){
+    return clamp(Math.floor((rep || 0) / 10), 0, 10);
+  }
+
+
+  const rewardText = (rw) => {
+    if (!rw) return "—";
+    const parts = [];
+    for (const k of ["scrap","food","water","tech","caps"]){
+      const v = rw[k] || 0;
+      if (v > 0) parts.push(`${k.toUpperCase()} ${Math.floor(v)}`);
+    }
+    return parts.length ? parts.join(" · ") : "—";
+  };
+
+  function log(msg, tone="") {
+    const el = $("log");
+    if (!el) return;
+    const p = document.createElement("p");
+    const ts = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+    p.innerHTML = `<span>[${ts}]</span> ${msg}`;
+    if (tone === "warn") p.style.color = "var(--warn)";
+    if (tone === "danger") p.style.color = "var(--danger)";
+    el.prepend(p);
+    while (el.children.length > 70) el.removeChild(el.lastChild);
+  }
+
+  // ---------- Game State ----------
+  const DEFAULT = {
+    version: 5,
+    t: now(),
+    scrap: 20,
+    food: 15,
+    water: 10,
+    tech: 0,
+    caps: 25,
+    rad: 0,
+    pop: 3,
+    idle: 3,
+    scav: 0,
+    farmers: 0,
+    purifiers: 0,
+    militia: 0,
+    shack: 0,
+    farm: 0,
+    purifier: 0,
+    turret: 0,
+    techs: { workshop:false, radio:false, medbay:false, caravan:false },
+    day: 1,
+    raidsWon: 0,
+
+    // CivCrafter: session momentum
+    momentum: 0,
+    momentumLastTick: 0,
+
+    // Expansion: meta-progression
+    prestige: { level: 0, tokens: 0 },
+    // Expansion: daily quest
+    quests: { last: 0, done: false, target: null, progress: 0, rewardCaps: 40, rewardTech: 2 },
+
+    // Expansion: factions
+    factions: {
+      active: null, // "bos" | "ncr" | "followers" | "raiders" | "enclave"
+      rep: { bos: 0, ncr: 0, followers: 0, raiders: 0, enclave: 0 },
+      rank: { bos: 0, ncr: 0, followers: 0, raiders: 0, enclave: 0 },
+    },
+
+    // Expansion: faction contract (one at a time; feels like CivCrafter "send a party")
+    contract: {
+      active: false,
+      faction: null,
+      name: null,
+      tier: 0,           // 0 quick, 1 deep
+      started: 0,
+      end: 0,
+      busy: 0,           // settlers committed
+      repGain: 0,
+      reward: null,      // {scrap, food, water, tech, caps}
+      ready: false
+    },
+  };
+
+  // Save key bumped because layout & version changed
+  const KEY = "wasteland_outpost_save_v5";
+
+  let S = load() || structuredClone(DEFAULT);
+
+  // ---------- Balancing ----------
+  function housingCap() {
+    return 3 + S.shack * 4 + (S.techs.workshop ? 3 : 0);
+  }
+  function defensePower() {
+    return S.militia * 1.0 + S.turret * 2.2 + (S.techs.medbay ? 0.4 : 0);
+  }
+  function productionPerSec() {
+    const scavRate = (0.6 + S.shack*0.03) * S.scav;
+    const foodRate = (0.45 + S.farm*0.12) * S.farmers;
+    const waterRate = (0.35 + S.purifier*0.18) * S.purifiers;
+    const techRate = (S.techs.workshop ? 0.05 : 0) * S.scav;
+    const capsRate = (S.techs.caravan ? 0.08 : 0) * (S.pop);
+
+    const radGain = Math.max(0, (S.pop * 0.002 + S.day * 0.0007) * (S.techs.medbay ? 0.55 : 1));
+
+    const foodUse = S.pop * 0.10;
+    const waterUse = S.pop * 0.08;
+
+    return { scavRate, foodRate, waterRate, techRate, capsRate, foodUse, waterUse, radGain };
+  }
+  function recruitCost() {
+    const baseF = 10 + Math.floor(S.pop * 1.6);
+    const baseW = 7 + Math.floor(S.pop * 1.2);
+    return { food: baseF, water: baseW };
+  }
+  function purifyCost() {
+    const scrap = 6 + Math.floor(S.purifier * 2.5);
+    return { scrap, waterGain: 5 + Math.floor(S.purifier * 0.9) };
+  }
+  function deconCost() {
+    // Water -> reduce rad; medbay makes it more efficient
+    const w = 6 + Math.floor(S.pop * 0.6);
+    let radDown = (S.techs.medbay ? 14 : 10);
+    // Followers can help you scrub RAD harder
+    if (S.factions && S.factions.active === "followers") {
+      const r = (S.factions.rank && S.factions.rank.followers) ? S.factions.rank.followers : 0;
+      radDown += r * 3;
+    }
+    return { water: w, radDown };
+  }
+
+  function tradeCost() {
+    // Early-game: trade scrap to get caps so you can build housing/defense.
+    // Scales gently so it stays useful but not broken.
+    const scrap = 16 + Math.floor((S.shack + S.turret) * 4) + Math.floor(S.pop * 1.5);
+    const capsGain = 10 + Math.floor(S.day * 0.6);
+    return { scrap, capsGain };
+  }
+  function raidPlan() {
+    const threat = 2.2 + S.day * 0.35 + (S.raidsWon * 0.7) + (S.pop * 0.08);
+    const your = defensePower();
+    const chance = clamp(0.15 + (your - threat) * 0.18, 0.05, 0.9);
+    const lootScrap = Math.floor(12 + threat * 8);
+    const lootFood = Math.floor(6 + threat * 3);
+    const lootTech = Math.random() < 0.25 ? 1 : 0;
+    const lootCaps = Math.floor(4 + threat * 4);
+    return { threat, your, chance, lootScrap, lootFood, lootTech, lootCaps };
+  }
+
+  // ===================== Expansion: Prestige + Daily Quest =====================
+
+  function prestigeBonus(){
+    const lvl = S.prestige?.level || 0;
+    return { prod: 1 + lvl * 0.12, caps: 1 + lvl * 0.20, radRes: 1 + lvl * 0.08 };
+  }
+
+  const _baseProductionPerSec = productionPerSec;
+  productionPerSec = function(){
+    const p = _baseProductionPerSec();
+    const b = prestigeBonus();
+    p.scavRate *= b.prod;
+    p.foodRate *= b.prod;
+    p.waterRate *= b.prod;
+    p.techRate *= b.prod;
+    p.capsRate *= b.caps;
+    p.radGain /= b.radRes;
+    return p;
+  };
+
+  // ===================== Expansion: Factions =====================
+
+  const FACTIONS = {
+    bos: {
+      name: "Brotherhood of Steel",
+      tag: "Tech · Defense",
+      desc: "Donate components. Get patrols and turret upgrades.",
+      bonusesByRank: [
+        { defFlat: 0, prod: 1, caps: 1, radRes: 1, loot: 1 },
+        { defFlat: 0.8, prod: 1.00, caps: 1.00, radRes: 1.02, loot: 1.00 },
+        { defFlat: 1.6, prod: 1.02, caps: 1.00, radRes: 1.05, loot: 1.00 },
+        { defFlat: 2.6, prod: 1.04, caps: 1.02, radRes: 1.08, loot: 1.00 },
+      ],
+      donate: { tech: 2, scrap: 20, repGain: 6 },
+    },
+    ncr: {
+      name: "NCR",
+      tag: "Order · Economy",
+      desc: "Fund a local outpost. Get caps flow and stability.",
+      bonusesByRank: [
+        { defFlat: 0, prod: 1, caps: 1, radRes: 1, loot: 1 },
+        { defFlat: 0.3, prod: 1.00, caps: 1.08, radRes: 1.02, loot: 1.00 },
+        { defFlat: 0.6, prod: 1.01, caps: 1.14, radRes: 1.04, loot: 1.00 },
+        { defFlat: 1.0, prod: 1.02, caps: 1.20, radRes: 1.06, loot: 1.00 },
+      ],
+      donate: { caps: 18, scrap: 12, repGain: 6 },
+    },
+    followers: {
+      name: "Followers of the Apocalypse",
+      tag: "Aid · Radiation",
+      desc: "Stock their clinics. Get better decon and slower rad.",
+      bonusesByRank: [
+        { defFlat: 0, prod: 1, caps: 1, radRes: 1, loot: 1 },
+        { defFlat: 0.0, prod: 1.01, caps: 1.00, radRes: 1.10, loot: 1.00 },
+        { defFlat: 0.0, prod: 1.02, caps: 1.00, radRes: 1.18, loot: 1.00 },
+        { defFlat: 0.2, prod: 1.03, caps: 1.00, radRes: 1.26, loot: 1.00 },
+      ],
+      donate: { water: 18, food: 14, repGain: 6 },
+    },
+    raiders: {
+      name: "Raiders",
+      tag: "Loot · Risk",
+      desc: "Pay tribute. Get bigger raid hauls (but it gets messy).",
+      bonusesByRank: [
+        { defFlat: 0, prod: 1, caps: 1, radRes: 1, loot: 1 },
+        { defFlat: 0.0, prod: 1.00, caps: 1.00, radRes: 0.98, loot: 1.10 },
+        { defFlat: 0.0, prod: 1.00, caps: 1.00, radRes: 0.95, loot: 1.20 },
+        { defFlat: 0.0, prod: 1.01, caps: 1.00, radRes: 0.92, loot: 1.30 },
+      ],
+      donate: { caps: 14, food: 10, repGain: 6 },
+    },
+    enclave: {
+      name: "Enclave",
+      tag: "Science · Power",
+      desc: "Trade data. Get tech salvage and production boosts.",
+      bonusesByRank: [
+        { defFlat: 0, prod: 1, caps: 1, radRes: 1, loot: 1 },
+        { defFlat: 0.4, prod: 1.04, caps: 1.00, radRes: 1.02, loot: 1.00 },
+        { defFlat: 0.8, prod: 1.07, caps: 1.00, radRes: 1.04, loot: 1.00 },
+        { defFlat: 1.2, prod: 1.10, caps: 1.02, radRes: 1.06, loot: 1.00 },
+      ],
+      donate: { tech: 2, caps: 16, repGain: 6 },
+    },
+  };
+
+  const RANKS = [
+    { name:"Neutral", min: 0 },
+    { name:"Trusted", min: 20 },
+    { name:"Ally", min: 50 },
+    { name:"Champion", min: 80 },
+  ];
+
+  function ensureFactions(){
+    if (!S.factions) S.factions = structuredClone(DEFAULT.factions);
+    if (!S.factions.rep) S.factions.rep = structuredClone(DEFAULT.factions.rep);
+    if (!S.factions.rank) S.factions.rank = structuredClone(DEFAULT.factions.rank);
+    if (S.factions.active === undefined) S.factions.active = null;
+    for (const id of Object.keys(FACTIONS)){
+      if (S.factions.rep[id] === undefined) S.factions.rep[id] = 0;
+      if (S.factions.rank[id] === undefined) S.factions.rank[id] = 0;
+    }
+  }
+
+  function ensureContract(){
+    if (!S.contract) S.contract = structuredClone(DEFAULT.contract);
+    if (S.contract.active === undefined) S.contract.active = false;
+    if (S.contract.busy === undefined) S.contract.busy = 0;
+    if (S.contract.ready === undefined) S.contract.ready = false;
+  }
+
+  function contractActive(){ ensureContract(); return !!S.contract.active; }
+  function contractReady(){ ensureContract(); return !!S.contract.ready; }
+  function contractTimeLeft(){ ensureContract(); return Math.max(0, (S.contract.end || 0) - now()); }
+  function fmtTime(ms){
+    const s = Math.ceil(ms/1000);
+    const m = Math.floor(s/60);
+    const r = s%60;
+    return m>0 ? `${m}m ${r}s` : `${r}s`;
+  }
+
+  function contractDefForFaction(id, tier){
+    // CivCrafter-like: short addictive loops with scaling rewards.
+    const rep = clamp(S.factions.rep[id] || 0, 0, 100);
+    const rank = clamp(S.factions.rank[id] || rankForRep(rep), 0, 3);
+    const day = Math.max(1, Math.floor(S.day));
+    const base = 10 + day*2 + rank*6;
+    const mult = tier===1 ? 2.4 : 1.0;
+    const dur = tier===1 ? 6*60*1000 : 90*1000;
+    const repGain = tier===1 ? (6 + rank*2) : (3 + rank);
+
+    // Rewards flavored by faction.
+    let reward = { scrap: Math.floor(base*mult), food: 0, water: 0, tech: 0, caps: 0 };
+    if (id === "bos") { reward.tech = (tier===1 ? 2 : 1) + (Math.random()<0.25?1:0); reward.caps = Math.floor(6*mult); }
+    if (id === "ncr") { reward.caps = Math.floor((12 + day)*mult); reward.food = Math.floor(6*mult); }
+    if (id === "followers") { reward.water = Math.floor(10*mult); reward.food = Math.floor(8*mult); reward.tech = (Math.random()<0.2?1:0); }
+    if (id === "raiders") { reward.caps = Math.floor(10*mult); reward.food = Math.floor(10*mult); reward.scrap = Math.floor(base*mult*1.25); }
+    if (id === "enclave") { reward.tech = (tier===1 ? 3 : 1) + (Math.random()<0.35?1:0); reward.scrap = Math.floor(base*mult*0.9); reward.caps = Math.floor(6*mult); }
+
+    // Rare "Relic" drop chance -> extra TECH
+    const relicChance = tier===1 ? 0.18 : 0.07;
+    return { dur, repGain, reward, relicChance, rank };
+  }
+
+  function canStartContract(){
+    ensureContract();
+    if (S.contract.active || S.contract.ready) return false;
+    return S.idle >= 1;
+  }
+
+  function startContract(id, tier){
+    ensureFactions(); ensureContract();
+    if (!FACTIONS[id]) return;
+    const rep = clamp(S.factions.rep[id] || 0, 0, 100);
+    if (tier === 1 && rep < 20){ log("Deep expeditions require REP 20+. Do a few Quick Runs or donate supplies.", "warn"); return; }
+    if (!canStartContract()) { log("No idle settlers to send. Free up 1 Idle settler.", "warn"); return; }
+    const def = contractDefForFaction(id, tier);
+    S.idle -= 1;
+    S.contract.active = true;
+    S.contract.faction = id;
+    S.contract.tier = tier;
+    S.contract.started = now();
+    S.contract.end = now() + def.dur;
+    S.contract.busy = 1;
+    S.contract.repGain = def.repGain;
+    S.contract.reward = def.reward;
+    S.contract.ready = false;
+    S.contract.relicChance = def.relicChance;
+
+    const label = tier===1 ? "Deep Expedition" : "Quick Run";
+    const fName = FACTIONS[id].name;
+    log(`${label} dispatched for ${fName}. ETA ${fmtTime(def.dur)}.`, "warn");
+  }
+
+  function finishContract(){
+    ensureContract(); ensureFactions();
+    if (!S.contract.active) return;
+    S.idle += (S.contract.busy || 0);
+
+    const id = S.contract.faction;
+    const reward = S.contract.reward || {};
+    for (const k of ["scrap","food","water","tech","caps"]) S[k] += (reward[k] || 0);
+
+    // REP gain
+    if (id && S.factions.rep[id] !== undefined){
+      S.factions.rep[id] = clamp((S.factions.rep[id]||0) + (S.contract.repGain||0), 0, 100);
+      const newRank = rankForRep(S.factions.rep[id]);
+      const oldRank = S.factions.rank[id] || 0;
+      S.factions.rank[id] = newRank;
+      if (newRank > oldRank) log(`${FACTIONS[id].name}: rank up → ${rankName(newRank)}.`, "warn");
+    }
+
+    // Relic drop
+    if (Math.random() < (S.contract.relicChance || 0)) {
+      const extra = 1 + (S.contract.tier===1 ? 1 : 0);
+      S.tech += extra;
+      log(`Relic recovered! +${extra} TECH.`, "warn");
+    }
+
+    // Flavor
+    const bits = [];
+    if (reward.scrap) bits.push(`+${reward.scrap} Scrap`);
+    if (reward.food) bits.push(`+${reward.food} Food`);
+    if (reward.water) bits.push(`+${reward.water} Water`);
+    if (reward.tech) bits.push(`+${reward.tech} Tech`);
+    if (reward.caps) bits.push(`+${reward.caps} Caps`);
+    log(`Contract complete (${FACTIONS[id]?.name || "Faction"}). ${bits.join(", ")}. +${S.contract.repGain||0} REP.`, "warn");
+
+    S.contract.active = false;
+    S.contract.ready = false;
+    S.contract.faction = null;
+    S.contract.name = null;
+    S.contract.reward = null;
+    S.contract.busy = 0;
+    S.contract.repGain = 0;
+    S.contract.end = 0;
+  }
+
+  function checkContract(){
+    ensureContract();
+    if (!S.contract.active) return;
+    if (!S.contract.ready && now() >= (S.contract.end || 0)) {
+      S.contract.ready = true;
+      log("A runner returns at the gates. Contract ready to collect.", "warn");
+    }
+  }
+
+  function collectContract(){
+    ensureContract();
+    // Robust: allow collection even if the "ready" flag didn't update (e.g. timers paused in background on mobile)
+    if (!S.contract.active) return;
+
+    // If time has elapsed, mark ready now
+    if (!S.contract.ready && now() >= (S.contract.end || 0)) {
+      S.contract.ready = true;
+    }
+
+    if (!S.contract.ready) {
+      toast(`Not ready yet — ${fmtTime(contractTimeLeft())} left.`, "warn");
+      return;
+    }
+    finishContract();
+  }
+
+  function rankForRep(rep){
+    if (rep >= 80) return 3;
+    if (rep >= 50) return 2;
+    if (rep >= 20) return 1;
+    return 0;
+  }
+
+  function rankName(r){
+    return (RANKS[r] && RANKS[r].name) || "Neutral";
+  }
+
+  function activeFactionBonus(){
+    ensureFactions();
+    const id = S.factions.active;
+    if (!id || !FACTIONS[id]) return { defFlat:0, prod:1, caps:1, radRes:1, loot:1 };
+
+    const rep = clamp(S.factions.rep[id] || 0, 0, 100);
+    const r = clamp(S.factions.rank[id] || 0, 0, 3);
+
+    const base = FACTIONS[id].bonusesByRank[r] || { defFlat:0, prod:1, caps:1, radRes:1, loot:1 };
+
+    // CivCrafter: frequent micro-progress (every 10 REP)
+    const m10 = repMilestone10(rep); // 0..10
+    const micro = 1 + (m10 * 0.006); // up to +6%
+
+    return {
+      defFlat: base.defFlat || 0,
+      prod: (base.prod || 1) * micro,
+      caps: (base.caps || 1) * micro,
+      radRes: (base.radRes || 1),
+      loot: (base.loot || 1) * micro
+    };
+  }
+
+function addRep(id, amount){
+    ensureFactions();
+    if (!FACTIONS[id]) return;
+    const before = S.factions.rep[id] || 0;
+    const after = clamp(before + amount, 0, 100);
+    S.factions.rep[id] = after;
+    const rb = rankForRep(before);
+    const ra = rankForRep(after);
+    if (ra > rb){
+      S.factions.rank[id] = ra;
+      log(`${FACTIONS[id].name} reputation reached ${rankName(ra)} (${Math.round(after)}/100).`, "warn");
+    } else {
+      S.factions.rank[id] = Math.max(S.factions.rank[id] || 0, ra);
+    }
+  }
+
+  function canDonateFaction(id){
+    const d = FACTIONS[id]?.donate;
+    if (!d) return false;
+    return Object.entries(d).every(([k,v]) => {
+      if (k === "repGain") return true;
+      return (S[k] || 0) >= v;
+    });
+  }
+
+  function donateToFaction(id){
+    const d = FACTIONS[id]?.donate;
+    if (!d) return;
+    if (!canDonateFaction(id)) { log("Not enough supplies to donate.", "warn"); return; }
+    for (const [k,v] of Object.entries(d)){
+      if (k === "repGain") continue;
+      S[k] -= v;
+    }
+        const mm = momentumMult();
+    const repGain = Math.max(1, Math.floor(d.repGain * mm));
+    addRep(id, repGain);
+    addMomentum(1);
+    log(`Donation delivered to ${FACTIONS[id].name}. +${repGain} REP.` + (mm>1?` (Momentum +${Math.round((mm-1)*100)}%)`:``), "warn");
+  }
+
+  function setActiveFaction(id){
+    ensureFactions();
+    if (!FACTIONS[id]) return;
+    const rep = S.factions.rep[id] || 0;
+    if (rep < 20){ log("Earn at least 20 REP to ally with a faction.", "warn"); return; }
+    S.factions.active = id;
+    log(`You are now aligned with ${FACTIONS[id].name}.`, "warn");
+  }
+
+  function clearActiveFaction(){
+    ensureFactions();
+    if (!S.factions.active) return;
+    const prev = S.factions.active;
+    S.factions.active = null;
+    log(`You stepped back from ${FACTIONS[prev]?.name || "a faction"}.`, "warn");
+  }
+
+  // Apply faction bonuses to production and defense (layered on top of prestige).
+  const _prodAfterPrestige = productionPerSec;
+  productionPerSec = function(){
+    const p = _prodAfterPrestige();
+    const b = activeFactionBonus();
+    p.scavRate *= b.prod;
+    p.foodRate *= b.prod;
+    p.waterRate *= b.prod;
+    p.techRate *= b.prod;
+    p.capsRate *= b.caps;
+    p.radGain /= (b.radRes || 1);
+    return p;
+  };
+
+  const _baseDefensePower = defensePower;
+  defensePower = function(){
+    const base = _baseDefensePower();
+    const b = activeFactionBonus();
+    return base + (b.defFlat || 0);
+  };
+
+  function canPrestige(){
+    return (S.pop >= 25) || (S.raidsWon >= 12) || (S.tech >= 50);
+  }
+
+  function prestigeGainEstimate(){
+    const score = (S.pop * 1.5) + (S.raidsWon * 3) + (S.tech * 0.6) + (S.turret * 4);
+    return Math.max(1, Math.floor(score / 35));
+  }
+
+  function doPrestige(){
+    if (!canPrestige()){
+      log("Not ready to reset yet. Grow pop, win raids, or stockpile tech.", "warn");
+      return;
+    }
+    const gained = prestigeGainEstimate();
+    const prev = S.prestige || { level:0, tokens:0 };
+    const nextPrestige = { level: (prev.level||0) + 1, tokens: (prev.tokens||0) + gained };
+
+    S = structuredClone(DEFAULT);
+    S.prestige = nextPrestige;
+
+    save();
+    const el = $("log"); if (el) el.innerHTML = "";
+    log(`Wasteland Reset complete. Prestige Level ${S.prestige.level} (+${gained} tokens).`, "warn");
+    renderAll();
+    showScreen("clicker");
+  }
+
+  function ensureQuest(){
+    if (!S.quests || !S.quests.target){
+      S.quests = { last: 0, done: false, target: null, progress: 0, rewardCaps: 40, rewardTech: 2 };
+    }
+    const dayMs = 24*60*60*1000;
+    const fresh = (Date.now() - (S.quests.last||0)) < dayMs;
+    if (!fresh || S.quests.last === 0) rollNewQuest();
+  }
+
+  function rollNewQuest(){
+    const lvl = S.prestige?.level || 0;
+    const pool = [
+      { type:"scavenge", label:"Scavenge taps", goal: 35 + Math.floor(lvl*8) },
+      { type:"build", label:"Build structures", goal: 3 + Math.floor(lvl*1) },
+      { type:"raid", label:"Win raids", goal: 2 + Math.floor(lvl*0.5) },
+      { type:"recruit", label:"Recruit settlers", goal: 5 + Math.floor(lvl*1) },
+    ];
+    const pick = pool[Math.floor(Math.random()*pool.length)];
+    S.quests = {
+      last: Date.now(),
+      done: false,
+      target: pick,
+      progress: 0,
+      rewardCaps: 45 + Math.floor(lvl*10),
+      rewardTech: 2 + Math.floor(lvl*0.4),
+    };
+    log(`Daily quest: ${pick.label} (${S.quests.progress}/${pick.goal}).`, "warn");
+  }
+
+  function incQuest(type, amount=1){
+    if (!S.quests || !S.quests.target || S.quests.done) return;
+    if (S.quests.target.type !== type) return;
+    S.quests.progress += amount;
+    if (S.quests.progress >= S.quests.target.goal){
+      S.quests.done = true;
+      S.caps += S.quests.rewardCaps;
+      S.tech += S.quests.rewardTech;
+      log(`Daily quest complete! +${S.quests.rewardCaps} Caps, +${S.quests.rewardTech} Tech.`, "warn");
+    }
+  }
+
+  function questStatusText(){
+    ensureQuest();
+    const q = S.quests;
+    if (!q.target) return "No quest";
+    return q.done ? "Complete — claimed" : `${q.target.label}: ${q.progress}/${q.target.goal}`;
+  }
+
+
+  // ---------- UI: screen navigation ----------
+  const screens = ["clicker","build","battle","tech","factions","log"];
+  function showScreen(name){
+    for (const s of screens){
+      const el = $("screen-" + s);
+      if (el) el.classList.toggle("active", s === name);
+    }
+    document.querySelectorAll(".tab[data-screen]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.screen === name);
+    });
+    // render on switch so costs/buttons are fresh
+    renderAll();
+  }
+
+  document.querySelectorAll(".tab[data-screen]").forEach(btn => {
+    btn.addEventListener("click", () => showScreen(btn.dataset.screen));
+  });
+
+  // ---------- UI builders ----------
+  function renderTopPills() {
+    const el = $("topPills");
+    el.innerHTML = "";
+    const pills = [
+      ["SCRAP", S.scrap],
+      ["FOOD", S.food],
+      ["WATER", S.water],
+      ["TECH", S.tech],
+      ["CAPS", S.caps],
+      ["POP", `${S.pop}/${housingCap()}`],
+      ["RAD", `${Math.round(S.rad)}%`]
+    ];
+    for (const [k,v] of pills) {
+      const p = document.createElement("div");
+      p.className = "pill";
+      p.innerHTML = `${k}: <b>${typeof v === "number" ? fmt(v) : v}</b>`;
+      el.appendChild(p);
+    }
+  }
+
+  function renderWorkers() {
+    const panel = $("workerPanel");
+    if (!panel) return;
+    panel.innerHTML = "";
+
+    const makeAssign = (key, title, desc) => {
+      const wrap = document.createElement("div");
+      wrap.className = "row";
+      wrap.innerHTML = `
+        <div style="min-width:0;">
+          <div style="font-family:var(--mono); color:var(--accent); font-size:0.88rem;">${title}</div>
+          <div style="font-family:var(--sans); color:var(--muted); font-size:0.82rem; line-height:1.25;">${desc}</div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="closeBtn" data-act="minus" data-key="${key}" aria-label="Decrease ${title}">-</button>
+          <span style="min-width:32px; text-align:center; font-family:var(--mono);">${S[key]}</span>
+          <button class="closeBtn" data-act="plus" data-key="${key}" aria-label="Increase ${title}">+</button>
+        </div>
+      `;
+      panel.appendChild(wrap);
+    };
+
+    makeAssign("scav", "Scavengers", "Passive Scrap (and a little Tech with Workshop).");
+    makeAssign("farmers", "Farmhands", "Passive Food (better with Farms).");
+    makeAssign("purifiers", "Purifier Crew", "Passive Water (better with Purifiers).");
+    makeAssign("militia", "Militia", "Defense and raid success chance.");
+  }
+
+  function costText(cost) {
+    return Object.entries(cost).map(([k,v]) => `${k.toUpperCase()} ${v}`).join("<br/>");
+  }
+
+  function renderBuildings() {
+    const panel = $("buildPanel");
+    if (!panel) return;
+    panel.innerHTML = "";
+
+    const canAfford = (cost) => Object.entries(cost).every(([k,v]) => S[k] >= v);
+
+    const buyBtn = (name, desc, key, cost, extra="") => {
+      const btn = document.createElement("button");
+      btn.className = "btn";
+      btn.dataset.buy = key;
+      btn.innerHTML = `
+        <div class="left">
+          <div class="name">${name} <span class="tag">x${S[key]}</span></div>
+          <div class="desc">${desc}</div>
+        </div>
+        <small>${costText(cost)}${extra ? "<br/>"+extra : ""}</small>
+      `;
+      btn.disabled = !canAfford(cost);
+      panel.appendChild(btn);
+    };
+
+    buyBtn("Tin Shack", "Adds housing for settlers.", "shack",
+      { scrap: 18 + S.shack*10, caps: (S.shack < 2 ? 0 : (6 + S.shack*3)) },
+      `Cap +4 (now ${housingCap()})`
+    );
+
+    buyBtn("Dust Farm", "Boosts Food production.", "farm",
+      { scrap: 14 + S.farm*9, water: 6 + S.farm*3 }
+    );
+
+    buyBtn("Water Purifier", "Boosts Water production.", "purifier",
+      { scrap: 22 + S.purifier*12, tech: Math.floor(S.purifier*0.7) }
+    );
+
+    buyBtn("Jury-Rigged Turret", "Big defense boost.", "turret",
+      { scrap: 30 + S.turret*18, tech: 1 + Math.floor(S.turret*0.8), caps: 10 + S.turret*6 },
+      `Defense +2.2`
+    );
+  }
+
+  function renderTech() {
+    const panel = $("techPanel");
+    if (!panel) return;
+    panel.innerHTML = "";
+
+    const techs = [
+      { key: "workshop", name: "Workshop Bench", desc: "Scavengers trickle Tech; +housing bonus.", cost: { tech: 6, scrap: 40, caps: 20 } },
+      { key: "radio", name: "Radio Beacon", desc: "Recruiting cheaper; raids yield more.", cost: { tech: 10, scrap: 60, caps: 35 } },
+      { key: "medbay", name: "Field Medbay", desc: "Radiation rises slower; decon stronger.", cost: { tech: 14, scrap: 80, water: 35 } },
+      { key: "caravan", name: "Caravan Route", desc: "Passive Caps based on population.", cost: { tech: 18, scrap: 90, food: 60 } },
+    ];
+
+    const canAfford = (cost) => Object.entries(cost).every(([k,v]) => S[k] >= v);
+
+    for (const t of techs) {
+      const owned = !!S.techs[t.key];
+      const btn = document.createElement("button");
+      btn.className = "btn";
+      btn.dataset.tech = t.key;
+      btn.innerHTML = `
+        <div class="left">
+          <div class="name">${t.name} ${owned ? '<span class="tag">OWNED</span>' : ""}</div>
+          <div class="desc">${t.desc}</div>
+        </div>
+        <small>${owned ? "—" : costText(t.cost)}</small>
+      `;
+      btn.disabled = owned || !canAfford(t.cost);
+      panel.appendChild(btn);
+    }
+  }
+
+  function renderFactions(){
+    ensureFactions();
+    ensureContract();
+    const sum = $("factionSummary");
+    const panel = $("factionPanel");
+    if (!sum || !panel) return;
+
+    sum.innerHTML = "";
+    panel.innerHTML = "";
+
+    const active = S.factions.active;
+    const b = activeFactionBonus();
+
+    // --- Summary (CivCrafter vibe: clear next carrots) ---
+    const r0 = document.createElement("div");
+    r0.className = "row";
+    r0.innerHTML = `
+      <div class="label">Aligned</div>
+      <div class="value">${active ? (FACTIONS[active]?.name || active) : "None"} <span class="tag">${active ? (rankName(S.factions.rank[active]||0)) : "Neutral"}</span></div>
+    `;
+    sum.appendChild(r0);
+
+    const r1 = document.createElement("div");
+    r1.className = "row";
+    r1.innerHTML = `
+      <div class="label">Active bonuses</div>
+      <div class="value">${active ? `Defense +${fmt(b.defFlat||0)}, Prod x${fmt(b.prod||1)}, Caps x${fmt(b.caps||1)}, RAD x${fmt(1/(b.radRes||1))}, Loot x${fmt(b.loot||1)}` : "—"} <span class="tag">Momentum +${Math.round((momentumMult()-1)*100)}%</span> <span class="tag">Only 1 ally</span></div>
+    `;
+    sum.appendChild(r1);
+
+    // Contract status
+    const cr = document.createElement("div");
+    cr.className = "row";
+    const c = S.contract;
+    const cActive = contractActive();
+    const cReady = contractReady();
+    const left = contractTimeLeft();
+    const facName = c.faction ? (FACTIONS[c.faction]?.name || c.faction) : "—";
+    const statusChip = cReady ? `<span class="chip good pulse">READY</span>`
+                      : cActive ? `<span class="chip warn">IN PROGRESS · ${fmtTime(left)}</span>`
+                      : `<span class="chip">IDLE</span>`;
+    cr.innerHTML = `
+      <div class="label">Contract</div>
+      <div class="value">${statusChip} <span class="tag">${cActive||cReady ? `${facName} · ${c.name || "Operation"}` : "Start one to earn loot + REP"}</span></div>
+    `;
+    sum.appendChild(cr);
+
+    if (cActive){
+      const pr = document.createElement("div");
+      pr.className = "bar small";
+      const fill = document.createElement("div");
+      fill.className = "barFill";
+      const dur = Math.max(1, (c.end - c.started));
+      const pct = clamp(((now() - c.started) / dur) * 100, 0, 100);
+      fill.style.width = `${pct}%`;
+      pr.appendChild(fill);
+      sum.appendChild(pr);
+    }
+    if (cReady){
+      const btnRow = document.createElement("div");
+      btnRow.className = "row";
+      btnRow.innerHTML = `
+        <div class="label">Payout</div>
+        <div class="value" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+          <span class="tag">${rewardText(c.reward)} <span class="tag">+${c.repGain} REP</span></span>
+          <button class="miniBtn primary pulse" data-fact-act="collect" data-fact-id="${c.faction}">Collect</button>
+        </div>
+      `;
+      sum.appendChild(btnRow);
+    }
+
+    // --- Per faction cards ---
+    for (const id of Object.keys(FACTIONS)){
+      const f = FACTIONS[id];
+      const rep = clamp(S.factions.rep[id] || 0, 0, 100);
+      const rank = clamp(S.factions.rank[id] || rankForRep(rep), 0, 3);
+      const isActive = (S.factions.active === id);
+
+      const locked = (S.factions.active && S.factions.active !== id);
+      const activeName = S.factions.active ? (FACTIONS[S.factions.active]?.name || S.factions.active) : "";
+
+      const wrap = document.createElement("div");
+      wrap.className = "row";
+      wrap.style.flexDirection = "column";
+      wrap.style.alignItems = "stretch";
+      wrap.style.gap = "10px";
+
+      const head = document.createElement("div");
+      head.style.display = "flex";
+      head.style.justifyContent = "space-between";
+      head.style.gap = "10px";
+      head.style.flexWrap = "wrap";
+      head.innerHTML = `
+        <div style="min-width:0;">
+          <div style="font-family:var(--mono); color:var(--accent); font-size:0.9rem;">
+            ${f.name} ${isActive ? '<span class="tag">ACTIVE</span>' : ''}
+          </div>
+          <div style="font-family:var(--sans); color:var(--muted); font-size:0.82rem; line-height:1.25;">
+            ${f.tag} · ${f.desc}
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:var(--mono);">REP ${Math.round(rep)}/100</div>
+          <div class="tag">${rankName(rank)}</div>
+        </div>
+      `;
+      wrap.appendChild(head);
+
+      const bar = document.createElement("div");
+      bar.className = "bar";
+      const fill = document.createElement("div");
+      fill.className = "barFill";
+      fill.style.width = `${rep}%`;
+      bar.appendChild(fill);
+      wrap.appendChild(bar);
+
+      // CivCrafter: frequent REP milestones (every 10)
+      const m10 = repMilestone10(rep);
+      const nextMilestone = Math.min(100, (m10 + 1) * 10);
+      const microNow = 1 + (m10 * 0.006);
+      const microNext = 1 + (Math.min(10, m10 + 1) * 0.006);
+      const microDelta = Math.max(0, (microNext - microNow) * 100);
+      const ms = document.createElement("div");
+      ms.style.fontFamily = "var(--sans)";
+      ms.style.color = "var(--muted)";
+      ms.style.fontSize = "0.78rem";
+      ms.style.display = "flex";
+      ms.style.justifyContent = "space-between";
+      ms.style.gap = "10px";
+      ms.style.flexWrap = "wrap";
+      ms.innerHTML = `
+        <span>Milestone: ${m10}/10 · Micro bonus: +${Math.round((microNow-1)*1000)/10}%</span>
+        <span>${rep < 100 ? `Next: REP ${nextMilestone} (+${Math.round(microDelta*10)/10}%)` : `Maxed`}</span>
+      `;
+      wrap.appendChild(ms);
+
+      
+
+      const donateTxt = Object.entries(f.donate)
+        .filter(([k]) => k !== "repGain")
+        .map(([k,v]) => `${k.toUpperCase()} ${v}`)
+        .join(" · ");
+
+      const quick = contractDefForFaction(id, 0);
+      const deep  = contractDefForFaction(id, 1);
+      const canStart = (!contractActive() && !contractReady() && S.idle >= 1);
+      const busy = (contractActive() || contractReady());
+
+      const meta = document.createElement("div");
+      meta.className = "factionMeta";
+      meta.innerHTML = `
+        <div style="font-family:var(--sans); color:var(--muted); font-size:0.85rem; line-height:1.25;">
+          Donate: <span class="tag">${donateTxt}</span> <span class="tag">+${f.donate.repGain} REP</span><br/>
+          Contracts (use 1 idle settler): 
+          <span class="tag">Quick · ${fmtTime(quick.dur)} · ${rewardText(quick.reward)} · +${quick.repGain} REP</span>
+          <span class="tag">Deep · ${fmtTime(deep.dur)} · ${rewardText(deep.reward)} · +${deep.repGain} REP</span>
+        </div>
+        <div class="fActions">
+          ${locked
+            ? `<button class="fbtn fbtnPrimary" disabled>ALLY</button>`
+            : (isActive
+                ? `<button class="fbtn fbtnDanger" data-fact-act="leave" data-fact-id="${id}">BREAK ALLIANCE</button>`
+                : `<button class="fbtn fbtnPrimary" data-fact-act="ally" data-fact-id="${id}">ALLY</button>`)}
+          <div class="actionRow">
+            <button class="fbtn fbtnSecondary" data-fact-act="donate" data-fact-id="${id}" ${locked ? "disabled" : ""}>DONATE</button>
+            <button class="fbtn fbtnSecondary" data-fact-act="opq" data-fact-id="${id}" ${(locked || !canStart) ? "disabled" : ""}>QUICK</button>
+            <button class="fbtn fbtnSecondary" data-fact-act="opd" data-fact-id="${id}" ${(locked || !canStart || rep<20) ? "disabled" : ""}>${rep>=20 ? "DEEP" : "DEEP (REP 20+)"}</button>
+          </div>
+          ${locked ? `<div class="lockHint">LOCKED — Aligned with ${activeName}</div>` : ``}
+        </div>
+      `;
+      wrap.appendChild(meta);
+
+      // Button states
+      const donateBtn = meta.querySelector('[data-fact-act="donate"]');
+      const allyBtn = meta.querySelector('[data-fact-act="ally"]');
+      if (donateBtn) donateBtn.disabled = locked || !canDonateFaction(id);
+      if (allyBtn) allyBtn.disabled = locked || isActive || rep < 20;
+
+      if (busy){
+        const opBtns = meta.querySelectorAll('[data-fact-act="opq"],[data-fact-act="opd"]');
+        opBtns.forEach(b => b.disabled = true);
+      }
+
+      panel.appendChild(wrap);
+    }
+  }
+
+  function renderStatsAndLog() {
+    const rows = $("statRows");
+    if (!rows) return;
+    const prod = productionPerSec();
+    rows.innerHTML = "";
+
+    const data = [
+      ["Idle Settlers", S.idle, "Unassigned workers"],
+      ["Scavengers", S.scav, "Auto-gather Scrap"],
+      ["Farmhands", S.farmers, "Auto-grow Food"],
+      ["Purifier Crew", S.purifiers, "Auto-produce Water"],
+      ["Militia", S.militia, "Defense + raids"],
+      ["Buildings", `Shacks ${S.shack} · Farms ${S.farm} · Purifiers ${S.purifier} · Turrets ${S.turret}`, "Counts"],
+      ["Defense Power", fmt(defensePower()), "Higher = safer raids"],
+      ["Net/sec", `+${fmt(prod.scavRate)} Scrap · ${fmt(prod.foodRate - prod.foodUse)} Food · ${fmt(prod.waterRate - prod.waterUse)} Water · +${fmt(prod.techRate)} Tech · +${fmt(prod.capsRate)} Caps`, "After consumption"],
+      ["Faction", (S.factions && S.factions.active) ? (FACTIONS[S.factions.active]?.name || S.factions.active) : "None", "One active ally"],
+      ["Daily Quest", questStatusText(), "Resets every 24h"],
+      ["Prestige", `Lv ${S.prestige?.level||0} · Tokens ${S.prestige?.tokens||0}`, "Permanent bonuses"],
+    ];
+
+    for (const [label, val, tip] of data) {
+      const r = document.createElement("div");
+      r.className = "row";
+      r.innerHTML = `<div class="label">${label}</div><div class="value">${val} <span class="tag">${tip}</span></div>`;
+      rows.appendChild(r);
+    }
+  }
+
+  function renderBattle() {
+    const stats = $("battleStats");
+    const tips = $("battleTips");
+    if (!stats || !tips) return;
+
+    const plan = raidPlan();
+    const need = Math.max(1, Math.floor(plan.threat * 0.6));
+    stats.innerHTML = "";
+    tips.innerHTML = "";
+
+    const rows = [
+      ["Threat Level", fmt(plan.threat), "Camp strength"],
+      ["Your Defense", fmt(plan.your), "Militia + turrets"],
+      ["Win Chance", `${Math.round(plan.chance*100)}%`, "Approx."],
+      ["Suggested Militia", need, "For comfort"],
+      ["Raids Won", S.raidsWon, "Lifetime"],
+    ];
+    for (const [label, val, tip] of rows) {
+      const r = document.createElement("div");
+      r.className = "row";
+      r.innerHTML = `<div class="label">${label}</div><div class="value">${val} <span class="tag">${tip}</span></div>`;
+      stats.appendChild(r);
+    }
+
+    const prod = productionPerSec();
+    const note = document.createElement("div");
+    note.className = "row";
+    note.innerHTML = `<div class="label">Tip</div><div class="value">If RAD is high, decontaminate before raiding. <span class="tag">RAD + fights = bad</span></div>`;
+    tips.appendChild(note);
+
+    const econ = document.createElement("div");
+    econ.className = "row";
+    econ.innerHTML = `<div class="label">Upkeep</div><div class="value">Your outpost consumes ${fmt(prod.foodUse)}/s Food and ${fmt(prod.waterUse)}/s Water. <span class="tag">Bigger pop = bigger costs</span></div>`;
+    tips.appendChild(econ);
+  }
+
+  function renderActionCosts() {
+    const p = purifyCost();
+    if ($("purifyCost")) $("purifyCost").innerHTML = `SCRAP ${p.scrap}<br/>+WATER ${p.waterGain}`;
+
+    const r = recruitCost();
+    const mod = S.techs.radio ? 0.82 : 1;
+    if ($("recruitCost")) $("recruitCost").innerHTML = `FOOD ${Math.floor(r.food*mod)}<br/>WATER ${Math.floor(r.water*mod)}`;
+
+    const d = deconCost();
+    if ($("deconCost")) $("deconCost").innerHTML = `WATER ${d.water}<br/>RAD -${d.radDown}%`;
+
+    const tr = tradeCost();
+    if ($("tradeCost")) $("tradeCost").innerHTML = `SCRAP ${tr.scrap}<br/>+CAPS ${tr.capsGain}`;
+
+    const raid = raidPlan();
+    const need = Math.max(1, Math.floor(raid.threat * 0.6));
+    if ($("raidHint")) $("raidHint").innerHTML = `Need MILITIA ~${need}<br/>Win ${Math.round(raid.chance*100)}%`;
+  }
+
+  function renderAll() {
+    renderTopPills();
+    renderActionCosts();
+    renderWorkers();
+    renderBuildings();
+    renderTech();
+    renderFactions();
+    renderBattle();
+    renderStatsAndLog();
+  }
+
+  // ---------- Core actions ----------
+  function scavengeTap() {
+    const baseScrap = 3 + Math.floor(S.scav*0.15);
+    const baseFood = 1 + (Math.random() < 0.45 ? 1 : 0);
+    const water = (Math.random() < 0.18) ? 1 : 0;
+
+        const mm = momentumMult();
+    const gotScrap = Math.floor(baseScrap * mm);
+    const gotFood  = Math.floor(baseFood * mm);
+    const gotWater = Math.floor(water * mm);
+
+    S.scrap += gotScrap;
+    S.food  += gotFood;
+    S.water += gotWater;
+
+    addMomentum(1);
+
+    const techChance = (S.techs.workshop ? 0.08 : 0.03) + Math.min(0.05, S.day*0.002);
+    if (Math.random() < techChance) { S.tech += 1; log(`You found a pre‑war component. +1 TECH.`); }
+
+    S.rad = clamp(S.rad + (Math.random() < 0.25 ? 0.2 : 0), 0, 100);
+        log(`Scavenged the ruins: +${gotScrap} Scrap, +${gotFood} Food${gotWater?`, +${gotWater} Water`:``}.`);
+    incQuest("scavenge", 1);
+  }
+
+  function purify() {
+    const p = purifyCost();
+    if (S.scrap < p.scrap) return;
+    S.scrap -= p.scrap;
+    S.water += p.waterGain;
+    log(`Ran the purifier: -${p.scrap} Scrap, +${p.waterGain} Water.`);
+  }
+
+  function decontaminate() {
+    const d = deconCost();
+    if (S.water < d.water) { log(`Not enough Water to decontaminate.`, "warn"); return; }
+    if (S.rad <= 0.1) { log(`Radiation already low.`, "warn"); return; }
+    S.water -= d.water;
+    S.rad = clamp(S.rad - d.radDown, 0, 100);
+    log(`Decontamination complete: -${d.water} Water, RAD -${d.radDown}%.`, "warn");
+  }
+
+  function tradeScrap() {
+    const tr = tradeCost();
+    if (S.scrap < tr.scrap) { log(`Not enough Scrap to trade.`, "warn"); return; }
+    S.scrap -= tr.scrap;
+    S.caps += tr.capsGain;
+    log(`Traded with a wandering merchant: -${tr.scrap} Scrap, +${tr.capsGain} Caps.`, "warn");
+  }
+
+
+  function recruit() {
+    if (S.pop >= housingCap()) { log(`No room. Build more housing (Tin Shacks).`, "warn"); return; }
+    const c = recruitCost();
+    const mod = S.techs.radio ? 0.82 : 1;
+    const f = Math.floor(c.food*mod);
+    const w = Math.floor(c.water*mod);
+    if (S.food < f || S.water < w) return;
+    S.food -= f; S.water -= w;
+    S.pop += 1; S.idle += 1;
+    log(`A drifter joined your outpost. POP +1.`);
+    incQuest("recruit", 1);
+  }
+
+  function raid() {
+    const plan = raidPlan();
+    if (S.militia <= 0) { log(`No militia. Assign settlers to Militia first.`, "warn"); return; }
+    const raidFood = 3 + Math.floor(plan.threat);
+    const raidWater = 2 + Math.floor(plan.threat*0.6);
+    if (S.food < raidFood || S.water < raidWater) { log(`Not enough supplies to raid (need Food ${raidFood}, Water ${raidWater}).`, "warn"); return; }
+    S.food -= raidFood; S.water -= raidWater;
+
+    const roll = Math.random();
+    const lootMult = (S.techs.radio ? 1.15 : 1) * (activeFactionBonus().loot || 1) * momentumMult();
+
+    if (roll < plan.chance) {
+      S.raidsWon += 1;
+      addMomentum(1);
+      const s = Math.floor(plan.lootScrap * lootMult);
+      const f = Math.floor(plan.lootFood * lootMult);
+      const c = Math.floor(plan.lootCaps * lootMult);
+      S.scrap += s; S.food += f; S.caps += c;
+      if (plan.lootTech) S.tech += 1;
+      log(`Raid success. +${s} Scrap, +${f} Food, +${c} Caps${plan.lootTech?`, +1 Tech`:``}.`);
+      incQuest("raid", 1);
+      if (Math.random() < 0.25) S.rad = clamp(S.rad - 1.5, 0, 100);
+    } else {
+      const lossChance = clamp(0.25 + (plan.threat - defensePower())*0.10, 0.15, 0.75);
+      if (Math.random() < lossChance && S.militia > 0) {
+        S.militia -= 1; S.pop -= 1;
+        log(`Raid failed. You lost a fighter. POP -1, Militia -1.`, "danger");
+      } else {
+        log(`Raid failed. You retreated with bruises and empty pockets.`, "danger");
+      }
+      S.rad = clamp(S.rad + 2.0, 0, 100);
+    }
+  }
+
+  function assignWorker(key, delta) {
+    if (delta > 0) { if (S.idle <= 0) return; S[key] += 1; S.idle -= 1; }
+    else { if (S[key] <= 0) return; S[key] -= 1; S.idle += 1; }
+  }
+
+  function buyBuilding(key) {
+    const costs = {
+      shack: { scrap: 18 + S.shack*10, caps: (S.shack < 2 ? 0 : (6 + S.shack*3)) },
+      farm: { scrap: 14 + S.farm*9, water: 6 + S.farm*3 },
+      purifier: { scrap: 22 + S.purifier*12, tech: Math.floor(S.purifier*0.7) },
+      turret: { scrap: 30 + S.turret*18, tech: 1 + Math.floor(S.turret*0.8), caps: 10 + S.turret*6 },
+    }[key];
+
+    if (!costs) return;
+    for (const [k,v] of Object.entries(costs)) if (S[k] < v) return;
+    for (const [k,v] of Object.entries(costs)) S[k] -= v;
+    S[key] += 1;
+
+    const msg = { shack:"Built a Tin Shack. Housing increased.", farm:"Planted a Dust Farm. Food output improved.",
+                  purifier:"Installed a Water Purifier. Water output improved.", turret:"Mounted a Jury-Rigged Turret. Defense increased." }[key];
+    log(msg);
+    incQuest("build", 1);
+  }
+
+  function buyTech(key) {
+    const techDefs = {
+      workshop: { tech: 6, scrap: 40, caps: 20, msg: "Workshop online. Scavengers can now salvage Tech more reliably." },
+      radio: { tech: 10, scrap: 60, caps: 35, msg: "Radio Beacon broadcasting. Recruiting is cheaper; raids yield more." },
+      medbay: { tech: 14, scrap: 80, water: 35, msg: "Field Medbay set up. Radiation rises slower." },
+      caravan: { tech: 18, scrap: 90, food: 60, msg: "Caravan Route established. Caps now trickle in." },
+    }[key];
+    if (!techDefs || S.techs[key]) return;
+    for (const [k,v] of Object.entries(techDefs)) { if (k==="msg") continue; if (S[k] < v) return; }
+    for (const [k,v] of Object.entries(techDefs)) { if (k==="msg") continue; S[k] -= v; }
+    S.techs[key] = true;
+    log(techDefs.msg);
+  }
+
+  // ---------- Tick / simulation ----------
+  let last = now();
+  function tick() {
+    syncMomentum();
+    const t = now();
+    const dt = Math.min(1.0, (t - last) / 1000);
+    last = t;
+
+    const prod = productionPerSec();
+    S.scrap += prod.scavRate * dt;
+    S.food += prod.foodRate * dt;
+    S.water += prod.waterRate * dt;
+    S.tech += prod.techRate * dt;
+    S.caps += prod.capsRate * dt;
+
+    S.food -= prod.foodUse * dt;
+    S.water -= prod.waterUse * dt;
+
+    S.scrap = Math.max(0, S.scrap);
+    S.food = Math.max(0, S.food);
+    S.water = Math.max(0, S.water);
+    S.tech = Math.max(0, S.tech);
+    S.caps = Math.max(0, S.caps);
+
+    S.rad = clamp(S.rad + prod.radGain * dt, 0, 100);
+
+    if (S.rad > 75 && Math.random() < 0.0035 * dt * (S.rad - 74)) {
+      const lossF = 2 + Math.floor(Math.random()*4);
+      const lossW = 1 + Math.floor(Math.random()*3);
+      S.food = Math.max(0, S.food - lossF);
+      S.water = Math.max(0, S.water - lossW);
+      log(`Radiation sickness flares. -${lossF} Food, -${lossW} Water.`, "warn");
+    }
+
+    const starving = (S.food <= 0.1);
+    const thirsty = (S.water <= 0.1);
+    if ((starving || thirsty) && Math.random() < 0.0025 * dt * (1 + S.pop*0.05)) {
+      if (S.pop > 0) {
+        S.pop -= 1;
+        let removed = false;
+        for (const k of ["militia","purifiers","farmers","scav"]) {
+          if (S[k] > 0) { S[k] -= 1; removed = true; break; }
+        }
+        if (!removed) S.idle = Math.max(0, S.idle - 1);
+        log(`A settler left due to ${thirsty ? "thirst" : "hunger"}. POP -1.`, "danger");
+      }
+    }
+
+    S.day += dt * 0.02;
+
+    // Contracts (CivCrafter loop)
+    checkContract();
+
+    if (Math.random() < 0.01) save();
+
+    renderAll();
+  }
+
+  // ---------- Save/Load/Offline ----------
+  function save() {
+    S.t = now();
+    localStorage.setItem(KEY, JSON.stringify(S));
+    return true;
+  }
+
+  function migrateSave(data){
+    if (!data || !data.version) return null;
+
+    // v3 -> v5: add prestige/quests/factions/contract while keeping existing resources/buildings/etc.
+    if (data.version === 3){
+      const merged = structuredClone(DEFAULT);
+      for (const k of Object.keys(merged)) {
+        if (data[k] !== undefined) merged[k] = data[k];
+      }
+      // Ensure nested structures exist
+      merged.factions = merged.factions || structuredClone(DEFAULT.factions);
+      merged.factions.rep = Object.assign(structuredClone(DEFAULT.factions.rep), (data.factions && data.factions.rep) || {});
+      merged.factions.rank = Object.assign(structuredClone(DEFAULT.factions.rank), (data.factions && data.factions.rank) || {});
+      merged.factions.active = (data.factions && data.factions.active) || null;
+
+      merged.contract = structuredClone(DEFAULT.contract);
+      merged.version = 5;
+      return merged;
+    }
+
+    // v4 -> v5: introduce contract loop
+    if (data.version === 4){
+      const merged = structuredClone(DEFAULT);
+      for (const k of Object.keys(merged)) {
+        if (data[k] !== undefined) merged[k] = data[k];
+      }
+      merged.factions = merged.factions || structuredClone(DEFAULT.factions);
+      merged.factions.rep = Object.assign(structuredClone(DEFAULT.factions.rep), (data.factions && data.factions.rep) || {});
+      merged.factions.rank = Object.assign(structuredClone(DEFAULT.factions.rank), (data.factions && data.factions.rank) || {});
+      merged.factions.active = (data.factions && data.factions.active) || null;
+
+      merged.contract = (data.contract) ? Object.assign(structuredClone(DEFAULT.contract), data.contract) : structuredClone(DEFAULT.contract);
+      merged.version = 5;
+      return merged;
+    }
+
+    if (data.version === 5) return data;
+    return null;
+  }
+
+  function load() {
+    try {
+      const candidates = [KEY, "wasteland_outpost_save_v3"];
+      for (const k of candidates){
+        const raw = localStorage.getItem(k);
+        if (!raw) continue;
+        const data = JSON.parse(raw);
+        const migrated = migrateSave(data);
+        if (!migrated) continue;
+        // Write into the new key so future loads are fast
+        localStorage.setItem(KEY, JSON.stringify(migrated));
+        return migrated;
+      }
+      return null;
+    } catch { return null; }
+  }
+
+  function applyOfflineProgress() {
+    const t0 = S.t || now();
+    const elapsed = clamp((now() - t0) / 1000, 0, 60 * 60 * 4);
+    if (elapsed < 2) return;
+
+    const steps = 120;
+    const dt = elapsed / steps;
+    for (let i=0;i<steps;i++){
+      const prod = productionPerSec();
+      S.scrap += prod.scavRate * dt;
+      S.food += prod.foodRate * dt;
+      S.water += prod.waterRate * dt;
+      S.tech += prod.techRate * dt;
+      S.caps += prod.capsRate * dt;
+      S.food -= prod.foodUse * dt;
+      S.water -= prod.waterUse * dt;
+      S.scrap = Math.max(0,S.scrap);
+      S.food = Math.max(0,S.food);
+      S.water = Math.max(0,S.water);
+      S.tech = Math.max(0,S.tech);
+      S.caps = Math.max(0,S.caps);
+      S.rad = clamp(S.rad + productionPerSec().radGain * dt, 0, 100);
+      S.day += dt * 0.02;
+    }
+
+    log(`You were away for ${Math.floor(elapsed/60)}m. The outpost kept running.`, "warn");
+    checkContract();
+  }
+
+  // ---------- Event wiring ----------
+  $("btnScavenge").addEventListener("click", () => { scavengeTap(); renderAll(); });
+  $("btnPurify").addEventListener("click", () => { purify(); renderAll(); });
+  $("btnRecruit").addEventListener("click", () => { recruit(); renderAll(); });
+  $("btnRaid").addEventListener("click", () => { raid(); renderAll(); });
+  $("btnHealRad").addEventListener("click", () => { decontaminate(); renderAll(); });
+  $("btnTrade").addEventListener("click", () => { tradeScrap(); renderAll(); });
+
+  $("workerPanel").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    const key = btn.dataset.key;
+    const act = btn.dataset.act;
+    if (!key || !act) return;
+    assignWorker(key, act === "plus" ? +1 : -1);
+    renderAll();
+  });
+
+  $("buildPanel").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    const key = btn.dataset.buy;
+    if (!key) return;
+    buyBuilding(key);
+    renderAll();
+  });
+
+  $("techPanel").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    const key = btn.dataset.tech;
+    if (!key) return;
+    buyTech(key);
+    renderAll();
+  });
+
+  $("factionPanel").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    const id = btn.dataset.factId;
+    const act = btn.dataset.factAct;
+    if (!id || !act) return;
+
+    const locked = (S.factions.active && S.factions.active !== id);
+    if (locked && (act === "donate" || act === "ally" || act === "opq" || act === "opd")) return;
+
+    if (act === "donate") donateToFaction(id);
+    if (act === "ally") setActiveFaction(id);
+    if (act === "leave") clearActiveFaction();
+    if (act === "opq") startContract(id, 0);
+    if (act === "opd") startContract(id, 1);
+    if (act === "collect") collectContract();
+    renderAll();
+  });
+
+  // ---------- Menu modal (save/export/import/reset/help) ----------
+  const modal = $("modal");
+  $("modalClose").addEventListener("click", () => closeModal());
+  $("btnMenu").addEventListener("click", () => openMenu());
+
+  function openMenu(){
+    showModal("Menu", `
+      <div class="rows" style="gap:12px;">
+        <button class="btn" id="mSave">
+          <div class="left"><div class="name">Save</div><div class="desc">Write progress to this device</div></div>
+          <small>Local</small>
+        </button>
+        <button class="btn" id="mExport">
+          <div class="left"><div class="name">Export Save</div><div class="desc">Copy a save string</div></div>
+          <small>Clipboard</small>
+        </button>
+        <button class="btn" id="mImport">
+          <div class="left"><div class="name">Import Save</div><div class="desc">Paste a save string</div></div>
+          <small>Restore</small>
+        </button>
+        <button class="btn" id="mReset">
+          <div class="left"><div class="name">Reset</div><div class="desc">Start over</div></div>
+          <small style="color:var(--danger);">Wipes</small>
+        </button>
+        <button class="btn" id="mHelp">
+          <div class="left"><div class="name">Help</div><div class="desc">How to play</div></div>
+          <small>Tips</small>
+        </button>
+
+        <button class="btn" id="mPrestige">
+          <div class="left"><div class="name">Wasteland Reset (Prestige)</div><div class="desc">Reset for permanent bonuses</div></div>
+          <small>Lv ${S.prestige?.level||0}</small>
+        </button>
+      </div>
+    `);
+
+    setTimeout(() => {
+      $("mSave").onclick = () => { save(); log("Saved.", "warn"); closeModal(); };
+      $("mExport").onclick = () => exportSave();
+      $("mImport").onclick = () => importSave();
+      $("mReset").onclick = () => confirmReset();
+      $("mHelp").onclick = () => showHelp();
+      $("mPrestige").onclick = () => showPrestige();
+    }, 0);
+  }
+
+  async function exportSave(){
+    save();
+    const raw = localStorage.getItem(KEY) || "";
+    try {
+      await navigator.clipboard.writeText(raw);
+      log("Export copied to clipboard.", "warn");
+      closeModal();
+    } catch {
+      showModal("Export Save", `<p>Copy this save string:</p><p><span class="kbd" style="display:block; white-space:pre-wrap; word-break:break-all; padding:12px;">${escapeHtml(raw)}</span></p>`);
+    }
+  }
+
+  function importSave(){
+    showModal("Import Save", `
+      <p>Paste a save string below and press <span class="kbd">Import</span>.</p>
+      <textarea id="importBox" style="width:100%; min-height:160px; border-radius:16px; border:1px solid rgba(31,58,42,.85); background:rgba(0,0,0,.25); color:var(--text); padding:12px; font-family:var(--mono); font-size:0.82rem;"></textarea>
+      <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap;">
+        <button class="tab" id="doImport" style="justify-content:center;">Import</button>
+        <button class="tab" id="cancelImport" style="justify-content:center;">Cancel</button>
+      </div>
+    `);
+    setTimeout(() => {
+      $("doImport").onclick = () => {
+        const txt = $("importBox").value.trim();
+        try{
+          const data = JSON.parse(txt);
+          const migrated = migrateSave(data);
+          if (!migrated) throw new Error("Bad save");
+          S = migrated;
+          save();
+          log("Imported save.", "warn");
+          closeModal();
+          renderAll();
+        } catch {
+          log("Import failed (invalid save).", "danger");
+        }
+      };
+      $("cancelImport").onclick = () => closeModal();
+    }, 0);
+  }
+
+  function confirmReset(){
+    showModal("Reset Game", `
+      <p>This will wipe your current outpost. This can't be undone.</p>
+      <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap;">
+        <button class="tab" id="doReset" style="justify-content:center; border-color: rgba(255,107,107,.55);">Reset</button>
+        <button class="tab" id="cancelReset" style="justify-content:center;">Cancel</button>
+      </div>
+    `);
+    setTimeout(() => {
+      $("doReset").onclick = () => {
+        S = structuredClone(DEFAULT);
+        save();
+        // clear log area
+        const el = $("log"); if (el) el.innerHTML = "";
+        log("Reset complete.", "warn");
+        closeModal();
+        renderAll();
+        showScreen("clicker");
+      };
+      $("cancelReset").onclick = () => closeModal();
+    }, 0);
+  }
+
+
+  function showPrestige(){
+    const ready = canPrestige();
+    const est = prestigeGainEstimate();
+    const lvl = S.prestige?.level || 0;
+    const tok = S.prestige?.tokens || 0;
+    const b = prestigeBonus();
+    showModal("Wasteland Reset (Prestige)", `
+      <p><b>Prestige Level:</b> ${lvl} · <b>Tokens:</b> ${tok}</p>
+      <p><b>Current bonuses:</b> +${Math.round((b.prod-1)*100)}% production, +${Math.round((b.caps-1)*100)}% caps, lower radiation gain.</p>
+      <p><b>Reset requirement:</b> POP ≥ 25, or Raids Won ≥ 12, or TECH ≥ 50.</p>
+      <p><b>You would gain:</b> ~${est} tokens.</p>
+      <button class="btn" id="doPrestigeNow" ${ready ? "" : "disabled"}>
+        <div class="left"><div class="name">Reset Now</div><div class="desc">${ready ? "Start a new run with bonuses" : "Not ready yet"}</div></div>
+        <small>${ready ? "GO" : "LOCKED"}</small>
+      </button>
+    `);
+    setTimeout(() => {
+      const b = document.getElementById("doPrestigeNow");
+      if (b) b.onclick = () => { doPrestige(); closeModal(); };
+    }, 0);
+  }
+
+  function showHelp(){
+    showModal("How to Play", `
+      <p><b>Resources</b>: tap <span class="kbd">Scavenge</span>, then assign settlers to automate.</p>
+      <p><b>Build</b>: Shacks raise housing, Farms & Purifiers raise production, Turrets raise defense.</p>
+      <p><b>Battle</b>: assign Militia, then raid for loot. More defense = better win chance.</p>
+      <p><b>Radiation</b>: grows with time/pop. Use <span class="kbd">Decontaminate</span> (stronger with Medbay).</p>
+      <p><b>Tip</b>: Early game is usually Water‑limited—build a Purifier and assign Purifier Crew.</p>
+    `);
+  }
+
+  function showModal(title, html) {
+    $("modalTitle").textContent = title;
+    $("modalBody").innerHTML = html;
+    modal.showModal();
+  }
+  function closeModal() { if (modal.open) modal.close(); }
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- Init ----------
+  ensureQuest();
+  ensureFactions();
+  ensureContract();
+  applyOfflineProgress();
+  renderAll();
+  log("Outpost initialized. The wasteland waits…");
+  log("Early tip: Use Trade Scrap to get Caps for your first Tin Shacks (housing) and Turrets.", "warn");
+  log("New: Daily Quest & Prestige! Check Log for quest progress; use Menu → Wasteland Reset when you qualify.", "warn");
+  log("New: Factions tab — donate supplies, run Contracts, and Ally for bonuses.", "warn");
+  setInterval(tick, 250);
+
+})();
+</script>
+</body>
+</html>
