@@ -6,6 +6,7 @@
   <title>Wasteland Outpost — Idle Settlement Builder</title>
   <style>
     :root{
+      --adbar-h: 60px;
       --bg:#0b0f0c;
       --panel:#101a14;
       --panel2:#0d1511;
@@ -101,7 +102,7 @@
 
     /* Layout */
     .wrap{
-      padding: 16px 16px calc(96px + env(safe-area-inset-bottom));
+      padding: 16px 16px calc(96px + var(--adbar-h) + env(safe-area-inset-bottom));
       max-width:900px;
       margin:0 auto;
       display:flex;
@@ -225,7 +226,7 @@
     /* Bottom tab bar */
     .tabbar{
       position:fixed;
-      left:0; right:0; bottom:0;
+      left:0; right:0; bottom:var(--adbar-h);
       padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
       background: linear-gradient(180deg, rgba(11,15,12,.0), rgba(11,15,12,.92) 40%, rgba(11,15,12,.98));
       border-top:1px solid rgba(31,58,42,.75);
@@ -563,7 +564,56 @@
     }
     .miniHint{ color: var(--muted); font-family: var(--sans); font-size: .82rem; line-height:1.3; }
 
-  </style>
+  
+
+    /* --- Mobile/ads-friendly layout helpers --- */
+    .adtop{ position:sticky; top:0; z-index:11; }
+    .adbar{
+      position:fixed;
+      left:0; right:0; bottom:0;
+      height: calc(var(--adbar-h) + env(safe-area-inset-bottom));
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+      background: rgba(11,15,12,.92);
+      border-top:1px solid rgba(31,58,42,.65);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      z-index:13;
+      backdrop-filter: blur(6px);
+    }
+    .ad-slot{
+      width:min(100%, 480px);
+      height: var(--adbar-h);
+      border-radius: 14px;
+      border:1px dashed rgba(182,255,204,.35);
+      background: rgba(0,0,0,.18);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 12px;
+      letter-spacing:.08em;
+      text-transform: uppercase;
+      color: rgba(219,255,232,.65);
+      user-select:none;
+      -webkit-user-select:none;
+    }
+    .ad-slot:empty::before{ content:"AD SPACE"; }
+    .ad-slot.native{
+      width:100%;
+      height: 92px;
+      margin: 10px 0 2px;
+    }
+
+    /* Mobile-first tweaks */
+    @media (max-width: 640px){
+      header .toprow{ gap:10px; }
+      header .title h1{ font-size: 20px; letter-spacing:.12em; }
+      .wrap{ max-width: 560px; padding-left:12px; padding-right:12px; }
+      .btn{ padding: 14px 14px; }
+      .tabbar{ gap:8px; padding-left:10px; padding-right:10px; }
+      .tab{ min-width: 92px; }
+    }
+</style>
 </head>
 <body>
   <header>
@@ -575,6 +625,11 @@
       <div class="pillbar" id="topPills"></div>
     </div>
   </header>
+
+
+  <div class="adtop" id="adtop" aria-label="Advertisement">
+    <div class="ad-slot banner" id="adBannerTop" data-ad-slot="banner-top"></div>
+  </div>
 
   <main class="wrap">
 
@@ -645,6 +700,7 @@
     
     <!-- BATTLE -->
     <section class="screen" id="screen-battle">
+      <div class="ad-slot native" id="adNativeBattle" data-ad-slot="native-battle"></div>
       <div class="card">
         <div class="cardHeader"><h2>Battle</h2><span class="tag">Operations</span></div>
         <div class="cardBody">
@@ -718,6 +774,9 @@
     </section>
 
   </main>
+  <div class="adbar" id="adbar" aria-label="Advertisement">
+    <div class="ad-slot banner" id="adBannerBottom" data-ad-slot="banner-bottom"></div>
+  </div>
 
   <nav class="tabbar" aria-label="Menus">
     <button class="tab active" data-screen="clicker"><span class="dot"></span>Resources</button>
@@ -2737,5 +2796,60 @@ return;
 
 })();
 </script>
+
+  <script>
+    // --- Ads integration hooks (safe no-op in browser) ---
+    // Mobile wrappers (Cordova/Capacitor/Android WebView/iOS WKWebView) can override these.
+    window.Ads = window.Ads || {};
+    (function(){
+      const slots = {
+        top: document.getElementById('adBannerTop'),
+        bottom: document.getElementById('adBannerBottom'),
+        nativeBattle: document.getElementById('adNativeBattle')
+      };
+
+      function setSlotVisible(el, on){
+        if(!el) return;
+        el.style.display = on ? 'flex' : 'none';
+      }
+
+      // Banner helpers
+      window.Ads.showBanner = function(position='bottom'){
+        if(position === 'top'){ setSlotVisible(slots.top, true); setSlotVisible(slots.bottom, false); }
+        else { setSlotVisible(slots.bottom, true); setSlotVisible(slots.top, false); }
+        document.dispatchEvent(new CustomEvent('ads:banner:show', {detail:{position}}));
+      };
+      window.Ads.hideBanner = function(){
+        setSlotVisible(slots.top, false);
+        setSlotVisible(slots.bottom, false);
+        document.dispatchEvent(new CustomEvent('ads:banner:hide'));
+      };
+
+      // Interstitial / Rewarded: call into native if available, otherwise simulate.
+      // Your native layer can listen for these events and then call Ads._onInterstitialClosed(), etc.
+      window.Ads.showInterstitial = function(placement='generic'){
+        document.dispatchEvent(new CustomEvent('ads:interstitial:request', {detail:{placement}}));
+        // Web fallback: instantly close (no-op)
+        window.setTimeout(()=>window.Ads._onInterstitialClosed(placement), 50);
+      };
+      window.Ads.showRewarded = function(placement='reward'){
+        document.dispatchEvent(new CustomEvent('ads:rewarded:request', {detail:{placement}}));
+        // Web fallback: instantly grant
+        window.setTimeout(()=>window.Ads._onRewarded(placement, true), 50);
+      };
+
+      // Callbacks for native layer
+      window.Ads._onInterstitialClosed = function(placement){
+        document.dispatchEvent(new CustomEvent('ads:interstitial:closed', {detail:{placement}}));
+      };
+      window.Ads._onRewarded = function(placement, granted){
+        document.dispatchEvent(new CustomEvent('ads:rewarded:closed', {detail:{placement, granted: !!granted}}));
+      };
+
+      // Default behavior in-browser: show bottom banner placeholder
+      window.Ads.showBanner('bottom');
+    })();
+  </script>
+
 </body>
 </html>
