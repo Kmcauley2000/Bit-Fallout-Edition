@@ -625,11 +625,17 @@
     <!-- BATTLE -->
     <section class="screen" id="screen-battle">
       <div class="card">
-        <div class="cardHeader"><h2>Battle</h2><span class="tag">Operations</span></div>
+        <div class="cardHeader"><h2>Battle</h2><span class="tag">Raids</span></div>
         <div class="cardBody">
           <div class="rows" id="battleStats"></div>
           <div class="divider"></div>
-          <div class="rows" id="battleOps"></div>
+          <button class="btn" id="btnRaid">
+            <div class="left">
+              <div class="name">Raid Nearby Camp</div>
+              <div class="desc">Risk a fight to win loot (needs militia)</div>
+            </div>
+            <small id="raidHint"></small>
+          </button>
           <div class="divider"></div>
           <div class="rows" id="battleTips"></div>
         </div>
@@ -817,7 +823,7 @@
 
   // ---------- Game State ----------
   const DEFAULT = {
-    version: 6,
+    version: 5,
     t: now(),
     scrap: 20,
     food: 15,
@@ -868,22 +874,10 @@
       reward: null,      // {scrap, food, water, tech, caps}
       ready: false
     },
-
-    // Operations: send militia out (asynchronous battle loop)
-    ops: {
-      active: false,
-      kind: null,        // "patrol" | "raid" | "assault"
-      started: 0,
-      end: 0,
-      busy: 0,           // militia committed
-      ready: false,
-      threat: 0,
-      reward: null       // {scrap, food, water, tech, caps}
-    },
   };
 
   // Save key bumped because layout & version changed
-  const KEY = "wasteland_outpost_save_v6";
+  const KEY = "wasteland_outpost_save_v5";
 
   let S = load() || structuredClone(DEFAULT);
 
@@ -891,16 +885,8 @@
   function housingCap() {
     return 3 + S.shack * 4 + (S.techs.workshop ? 3 : 0);
   }
-  function busyMilitia(){
-    return (S.ops && S.ops.active) ? (S.ops.busy||0) : 0;
-  }
-  function availableMilitia(){
-    return Math.max(0, (S.militia||0) - busyMilitia());
-  }
   function defensePower() {
-    // Militia out on an operation do not contribute to base defense.
-    const mil = availableMilitia();
-    return mil * 1.0 + S.turret * 2.2 + (S.techs.medbay ? 0.4 : 0);
+    return S.militia * 1.0 + S.turret * 2.2 + (S.techs.medbay ? 0.4 : 0);
   }
   function productionPerSec() {
     const scavRate = (0.6 + S.shack*0.03) * S.scav;
@@ -944,277 +930,16 @@
     const capsGain = 10 + Math.floor(S.day * 0.6);
     return { scrap, capsGain };
   }
-  // ---------- Operations (v6 Battle Redesign) ----------
-const OPS = {
-  patrol: { name:"Patrol Route", tag:"Low Risk", desc:"Sweep nearby roads. Small loot, keeps the region quieter.", baseThreat: 2.0, dur: 45 },
-  raid:   { name:"Raid Raider Camp", tag:"Medium",   desc:"Hit a camp for supplies. Decent loot, real danger.", baseThreat: 4.2, dur: 120 },
-  assault:{ name:"Assault Stronghold", tag:"High",   desc:"Break a fortified hold. Big rewards — heavy losses if you misjudge.", baseThreat: 7.0, dur: 300 },
-};
-
-function ensureOps(){
-  if (!S.ops) S.ops = structuredClone(DEFAULT.ops);
-  if (S.ops.busy === undefined) S.ops.busy = 0;
-  if (S.ops.ready === undefined) S.ops.ready = false;
-  if (S.ops.active === undefined) S.ops.active = false;
-}
-
-function opsActive(){ ensureOps(); return !!S.ops.active; }
-function opsReady(){ ensureOps(); return !!S.ops.active && (S.ops.ready || now() >= (S.ops.end||0)); }
-function opsTimeLeft(){ ensureOps(); return Math.max(0, (S.ops.end||0) - now()); }
-
-function opsThreat(kind){
-  const d = OPS[kind]; if (!d) return 0;
-  const lvl = S.prestige?.level || 0;
-  // Scales with day and prestige, lightly damped by turrets (regional control)
-  const t = d.baseThreat + S.day*0.25 + lvl*0.45 - Math.min(1.2, S.turret*0.08);
-  return clamp(t, 1.5, 25);
-}
-
-function opsSupplyCost(kind){
-  const threat = opsThreat(kind);
-  // Supplies scale with risk; Radio makes logistics a bit easier.
-  const mod = S.techs.radio ? 0.9 : 1;
-  const food = Math.ceil((2.2 + threat*0.55) * mod);
-  const water = Math.ceil((1.6 + threat*0.42) * mod);
-  return { food, water };
-}
-
-function opsReward(kind){
-  const threat = opsThreat(kind);
-  const lootMult = (activeFactionBonus().loot || 1) * momentumMult();
-  const tier = (kind === "patrol") ? 0.85 : (kind === "raid" ? 1.15 : 1.7);
-  const s = Math.floor((6 + threat*6.2) * tier * lootMult);
-  const f = Math.floor((3 + threat*2.4) * tier * lootMult);
-  const c = Math.floor((4 + threat*3.2) * tier * lootMult);
-  const techChance = (kind === "assault" ? 0.42 : (kind === "raid" ? 0.22 : 0.10)) + Math.min(0.10, S.day*0.002);
-  const tech = (Math.random() < techChance) ? 1 : 0;
-  return { scrap:s, food:f, caps:c, tech };
-}
-
-function opsEnemyPower(kind){
-  const threat = opsThreat(kind);
-  // Enemy power: threat-weighted with noise
-  const noise = 0.85 + Math.random()*0.35;
-  return threat * 1.25 * noise;
-}
-
-function opsPlayerPower(sent){
-  // Sent militia fight out there; turrets help only via intel (small), Medbay keeps injuries down.
-  const intel = S.techs.radio ? 0.18 : 0;
-  const med = S.techs.medbay ? 0.10 : 0;
-  const lvl = S.prestige?.level || 0;
-  const p = (sent * (1 + intel)) + (lvl * 0.35) + (S.turret * 0.25) + (med ? 0.35 : 0);
-  return Math.max(0, p);
-}
-
-function opsChance(kind, sent){
-  const enemy = opsEnemyPower(kind);
-  const you = opsPlayerPower(sent);
-  // Smooth curve: even fights ~55%, outmatched drops fast, advantaged rises but never 100%
-  const ratio = (you + 0.8) / (enemy + 0.8);
-  const chance = 1 / (1 + Math.exp(-3.2*(ratio - 1)));
-  // Clamp for feel + RAD penalty
-  const radPenalty = clamp((S.rad||0) / 140, 0, 0.28);
-  return clamp(chance - radPenalty, 0.12, 0.92);
-}
-
-function checkOps(){
-  ensureOps();
-  if (!S.ops.active) return;
-  if (!S.ops.ready && now() >= (S.ops.end || 0)) {
-    S.ops.ready = true;
-    log("An operations runner returns. Your squad is ready to report.", "warn");
+  function raidPlan() {
+    const threat = 2.2 + S.day * 0.35 + (S.raidsWon * 0.7) + (S.pop * 0.08);
+    const your = defensePower();
+    const chance = clamp(0.15 + (your - threat) * 0.18, 0.05, 0.9);
+    const lootScrap = Math.floor(12 + threat * 8);
+    const lootFood = Math.floor(6 + threat * 3);
+    const lootTech = Math.random() < 0.25 ? 1 : 0;
+    const lootCaps = Math.floor(4 + threat * 4);
+    return { threat, your, chance, lootScrap, lootFood, lootTech, lootCaps };
   }
-}
-
-function startOps(kind, sent){
-  ensureOps();
-  const d = OPS[kind]; if (!d) return;
-  if (S.ops.active) { toast("Operation already active.", "warn"); return; }
-
-  const avail = availableMilitia();
-  if (avail <= 0) { toast("No available militia. Assign more or wait for the squad to return.", "warn"); return; }
-
-  const n = clamp(sent, 1, avail);
-  const cost = opsSupplyCost(kind);
-  if (S.food < cost.food || S.water < cost.water){
-    toast(`Need Food ${cost.food} + Water ${cost.water}.`, "warn");
-    return;
-  }
-
-  S.food -= cost.food;
-  S.water -= cost.water;
-
-  S.ops.active = true;
-  S.ops.kind = kind;
-  S.ops.started = now();
-  S.ops.end = now() + (d.dur * 1000);
-  S.ops.busy = n;
-  S.ops.ready = false;
-  S.ops.threat = opsThreat(kind);
-  S.ops.reward = null;
-
-  log(`Operation dispatched: ${d.name}. Squad ${n} · ETA ${fmtTime(d.dur*1000)}.`, "warn");
-}
-
-function finishOps(){
-  ensureOps();
-  if (!S.ops.active) return;
-
-  const kind = S.ops.kind;
-  const d = OPS[kind] || { name:"Operation" };
-  const sent = Math.max(1, S.ops.busy || 1);
-
-  // Determine outcome
-  const ch = opsChance(kind, sent);
-  const roll = Math.random();
-
-  if (roll < ch){
-    S.raidsWon += 1;           // keep legacy stat + prestige condition
-    incQuest("raid", 1);       // keep daily quest type
-    addMomentum(1);
-
-    const rw = opsReward(kind);
-    S.scrap += (rw.scrap||0);
-    S.food  += (rw.food||0);
-    S.caps  += (rw.caps||0);
-    if (rw.tech) S.tech += rw.tech;
-
-    // Minor RAD relief on a clean win
-    if (Math.random() < 0.22) S.rad = clamp(S.rad - 1.2, 0, 100);
-
-    const bits = [];
-    if (rw.scrap) bits.push(`+${rw.scrap} Scrap`);
-    if (rw.food) bits.push(`+${rw.food} Food`);
-    if (rw.caps) bits.push(`+${rw.caps} Caps`);
-    if (rw.tech) bits.push(`+${rw.tech} Tech`);
-    log(`${d.name} success. ${bits.join(", ")}.`, "warn");
-  } else {
-    // Loss model: casualties scale with how outmatched you were (and operation tier)
-    const tier = (kind === "patrol") ? 0.6 : (kind === "raid" ? 1.0 : 1.5);
-    const outmatched = clamp((0.55 - ch) / 0.55, 0, 1);
-    const baseLoss = Math.random() < (0.18 + outmatched*0.55) ? 1 : 0;
-    const extraLoss = Math.random() < (0.08 + outmatched*0.35) ? 1 : 0;
-    let losses = Math.floor((baseLoss + extraLoss) * tier);
-
-    losses = clamp(losses, 0, Math.min(sent, 3));
-    if (losses > 0 && S.militia > 0){
-      const real = Math.min(losses, S.militia);
-      S.militia -= real;
-      S.pop = Math.max(0, S.pop - real);
-      log(`${d.name} failed. You lost ${real} militia. POP -${real}, Militia -${real}.`, "danger");
-    } else {
-      log(`${d.name} failed. The squad limped back with nothing.`, "danger");
-    }
-    // Failures spike RAD
-    S.rad = clamp(S.rad + (kind === "assault" ? 3.0 : 2.0), 0, 100);
-  }
-
-  // Reset operation state (busy militia return automatically if they survived)
-  S.ops.active = false;
-  S.ops.ready = false;
-  S.ops.kind = null;
-  S.ops.started = 0;
-  S.ops.end = 0;
-  S.ops.busy = 0;
-  S.ops.threat = 0;
-  S.ops.reward = null;
-}
-
-function collectOps(){
-  ensureOps();
-  if (!S.ops.active) return;
-  if (!S.ops.ready && now() < (S.ops.end||0)) {
-    toast(`Not ready yet — ${fmtTime(opsTimeLeft())} left.`, "warn");
-    return;
-  }
-  S.ops.ready = true;
-  finishOps();
-}
-
-function openOpsDispatch(kind){
-  ensureOps();
-  const d = OPS[kind]; if (!d) return;
-
-  if (S.ops.active){
-    toast("Finish your current operation first.", "warn");
-    return;
-  }
-
-  const avail = availableMilitia();
-  if (avail <= 0){
-    toast("No available militia. Assign more militia first.", "warn");
-    return;
-  }
-
-  const cost = opsSupplyCost(kind);
-  const suggest = clamp(Math.ceil(opsThreat(kind) * 0.65), 1, avail);
-
-  showModal("Dispatch Operation", `
-    <p style="font-family:var(--mono); margin:0 0 6px;">${d.name} <span class="tag">${d.tag}</span></p>
-    <p>${d.desc}</p>
-    <div class="divider"></div>
-
-    <div class="rows" style="gap:10px;">
-      <div class="row">
-        <div class="label">Available militia</div>
-        <div class="value">${avail} <span class="tag">Busy returns after ETA</span></div>
-      </div>
-
-      <div class="row" style="flex-direction:column; align-items:stretch; gap:10px;">
-        <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap;">
-          <div class="label">Squad size</div>
-          <div class="value"><span id="opsSendVal">${suggest}</span> <span class="tag">Suggested</span></div>
-        </div>
-        <input id="opsSend" type="range" min="1" max="${avail}" value="${suggest}" style="width:100%;" />
-        <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; font-family:var(--sans); color:var(--muted); font-size:0.85rem;">
-          <span>Supplies: <span class="tag">FOOD ${cost.food} · WATER ${cost.water}</span></span>
-          <span>ETA: <span class="tag">${fmtTime(d.dur*1000)}</span></span>
-        </div>
-        <div style="font-family:var(--sans); color:var(--muted); font-size:0.85rem;">
-          Est. win chance: <span class="tag" id="opsChanceTag">—</span> <span class="tag">RAD hurts</span>
-        </div>
-      </div>
-
-      <button class="btn" id="opsConfirm">
-        <div class="left">
-          <div class="name">Dispatch</div>
-          <div class="desc">Commit militia + supplies to start the timer</div>
-        </div>
-        <small>GO</small>
-      </button>
-    </div>
-  `);
-
-  const slider = $("opsSend");
-  const val = $("opsSendVal");
-  const tag = $("opsChanceTag");
-  const confirm = $("opsConfirm");
-
-  const refresh = () => {
-    const n = parseInt(slider.value, 10) || 1;
-    val.textContent = n;
-    const ch = opsChance(kind, n);
-    tag.textContent = `${Math.round(ch*100)}%`;
-    // Disable if can't afford right now
-    const can = (S.food >= cost.food && S.water >= cost.water);
-    confirm.disabled = !can;
-    if (!can) confirm.querySelector("small").textContent = "NEED SUPPLIES";
-    else confirm.querySelector("small").textContent = "GO";
-  };
-
-  slider.addEventListener("input", refresh);
-  refresh();
-
-  confirm.addEventListener("click", () => {
-    const n = parseInt(slider.value, 10) || 1;
-    startOps(kind, n);
-    closeModal();
-    renderAll();
-    queueSave();
-  }, { once:true });
-}
-
 
   // ===================== Expansion: Prestige + Daily Quest =====================
 
@@ -2008,126 +1733,28 @@ function addRep(id, amount){
   }
 
   function renderBattle() {
-  const stats = $("battleStats");
-  const opsPanel = $("battleOps");
-  const tips = $("battleTips");
-  if (!stats || !opsPanel || !tips) return;
+    const stats = $("battleStats");
+    const tips = $("battleTips");
+    if (!stats || !tips) return;
 
-  ensureOps();
-  checkOps();
+    const plan = raidPlan();
+    const need = Math.max(1, Math.floor(plan.threat * 0.6));
+    stats.innerHTML = "";
+    tips.innerHTML = "";
 
-  stats.innerHTML = "";
-  opsPanel.innerHTML = "";
-  tips.innerHTML = "";
-
-  const avail = availableMilitia();
-  const busy = busyMilitia();
-  const dp = defensePower();
-
-  const status = opsReady()
-    ? `<span class="chip good pulse">READY</span>`
-    : opsActive()
-      ? `<span class="chip warn">IN PROGRESS · ${fmtTime(opsTimeLeft())}</span>`
-      : `<span class="chip">IDLE</span>`;
-
-  const s0 = document.createElement("div");
-  s0.className = "row";
-  s0.innerHTML = `<div class="label">Operation</div><div class="value">${status} <span class="tag">${opsActive() ? (OPS[S.ops.kind]?.name || "Operation") : "Pick an operation below"}</span></div>`;
-  stats.appendChild(s0);
-
-  const rows = [
-    ["Available Militia", avail, busy ? `Busy ${busy}` : "All home"],
-    ["Defense Power", fmt(dp), "Militia home + turrets"],
-    ["Radiation", `${Math.round(S.rad||0)}%`, "High RAD lowers win chance"],
-    ["Raids Won", S.raidsWon, "Counts successful ops"],
-  ];
-  for (const [label, val, tip] of rows) {
-    const r = document.createElement("div");
-    r.className = "row";
-    r.innerHTML = `<div class="label">${label}</div><div class="value">${val} <span class="tag">${tip}</span></div>`;
-    stats.appendChild(r);
-  }
-
-  // Active op progress + collect
-  if (opsActive()){
-    const d = OPS[S.ops.kind] || { dur: 60, name:"Operation" };
-    const pr = document.createElement("div");
-    pr.className = "bar small";
-    const fill = document.createElement("div");
-    fill.className = "barFill";
-    const dur = Math.max(1, (S.ops.end - S.ops.started));
-    const pct = clamp(((now() - S.ops.started) / dur) * 100, 0, 100);
-    fill.style.width = `${pct}%`;
-    pr.appendChild(fill);
-    stats.appendChild(pr);
-
-    if (opsReady()){
-      const btnRow = document.createElement("div");
-      btnRow.className = "row";
-      btnRow.innerHTML = `
-        <div class="label">Report</div>
-        <div class="value" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
-          <span class="tag">Squad ${S.ops.busy || 1} · ${d.tag || ""}</span>
-          <button class="miniBtn primary pulse" data-ops-act="collect">Collect</button>
-        </div>
-      `;
-      stats.appendChild(btnRow);
+    const rows = [
+      ["Threat Level", fmt(plan.threat), "Camp strength"],
+      ["Your Defense", fmt(plan.your), "Militia + turrets"],
+      ["Win Chance", `${Math.round(plan.chance*100)}%`, "Approx."],
+      ["Suggested Militia", need, "For comfort"],
+      ["Raids Won", S.raidsWon, "Lifetime"],
+    ];
+    for (const [label, val, tip] of rows) {
+      const r = document.createElement("div");
+      r.className = "row";
+      r.innerHTML = `<div class="label">${label}</div><div class="value">${val} <span class="tag">${tip}</span></div>`;
+      stats.appendChild(r);
     }
-  }
-
-  // Operations list (only show when idle)
-  if (!opsActive()){
-    const wrap = document.createElement("div");
-    wrap.className = "rows";
-    wrap.style.gap = "10px";
-
-    for (const kind of ["patrol","raid","assault"]){
-      const d = OPS[kind];
-      const threat = opsThreat(kind);
-      const cost = opsSupplyCost(kind);
-      const suggest = clamp(Math.ceil(threat * 0.65), 1, Math.max(1, avail));
-      const est = avail > 0 ? Math.round(opsChance(kind, clamp(suggest,1,avail))*100) : 0;
-
-      const btn = document.createElement("button");
-      btn.className = "btn";
-      btn.dataset.opsKind = kind;
-      btn.innerHTML = `
-        <div class="left">
-          <div class="name">${d.name} <span class="tag">${d.tag}</span></div>
-          <div class="desc">${d.desc}</div>
-        </div>
-        <small>Threat ${fmt(threat)}<br/>Cost F${cost.food} · W${cost.water}<br/>Est ${est}%</small>
-      `;
-      btn.disabled = (avail <= 0);
-      wrap.appendChild(btn);
-    }
-
-    opsPanel.appendChild(wrap);
-  } else {
-    const note = document.createElement("div");
-    note.className = "row";
-    note.innerHTML = `<div class="label">Squad away</div><div class="value">Assigned militia are <b>busy</b> and don't add to defense. <span class="tag">Plan around it</span></div>`;
-    opsPanel.appendChild(note);
-  }
-
-  // Tips
-  const t1 = document.createElement("div");
-  t1.className = "row";
-  t1.innerHTML = `<div class="label">Tip</div><div class="value">Build turrets for safety and keep some militia home before risky ops. <span class="tag">Defense matters</span></div>`;
-  tips.appendChild(t1);
-
-  const t2 = document.createElement("div");
-  t2.className = "row";
-  t2.innerHTML = `<div class="label">Tip</div><div class="value">Decontaminate at high RAD before dispatching. <span class="tag">Win chance ↓</span></div>`;
-  tips.appendChild(t2);
-
-  const prod = productionPerSec();
-  const t3 = document.createElement("div");
-  t3.className = "row";
-  t3.innerHTML = `<div class="label">Upkeep</div><div class="value">Outpost consumes ${fmt(prod.foodUse)}/s Food and ${fmt(prod.waterUse)}/s Water. <span class="tag">Bigger pop = bigger costs</span></div>`;
-  tips.appendChild(t3);
-}
-
 
     const prod = productionPerSec();
     const note = document.createElement("div");
@@ -2154,6 +1781,10 @@ function addRep(id, amount){
 
     const tr = tradeCost();
     if ($("tradeCost")) $("tradeCost").innerHTML = `SCRAP ${tr.scrap}<br/>+CAPS ${tr.capsGain}`;
+
+    const raid = raidPlan();
+    const need = Math.max(1, Math.floor(raid.threat * 0.6));
+    if ($("raidHint")) $("raidHint").innerHTML = `Need MILITIA ~${need}<br/>Win ${Math.round(raid.chance*100)}%`;
   }
 
   function renderAll() {
@@ -2236,6 +1867,38 @@ function addRep(id, amount){
     incQuest("recruit", 1);
   }
 
+  function raid(srcEl=null){
+    const plan = raidPlan();
+    if (S.militia <= 0) { toast(`Assign Militia first.`, "warn"); log(`No militia. Assign settlers to Militia first.`, "warn"); return; }
+    const raidFood = 3 + Math.floor(plan.threat);
+    const raidWater = 2 + Math.floor(plan.threat*0.6);
+    if (S.food < raidFood || S.water < raidWater) { log(`Not enough supplies to raid (need Food ${raidFood}, Water ${raidWater}).`, "warn"); return; }
+    S.food -= raidFood; S.water -= raidWater;
+
+    const roll = Math.random();
+    const lootMult = (S.techs.radio ? 1.15 : 1) * (activeFactionBonus().loot || 1) * momentumMult();
+
+    if (roll < plan.chance) {
+      S.raidsWon += 1;
+      addMomentum(1);
+      const s = Math.floor(plan.lootScrap * lootMult);
+      const f = Math.floor(plan.lootFood * lootMult);
+      const c = Math.floor(plan.lootCaps * lootMult);
+      S.scrap += s; S.food += f; S.caps += c;
+      if (plan.lootTech) S.tech += 1;
+      log(`Raid success. +${s} Scrap, +${f} Food, +${c} Caps${plan.lootTech?`, +1 Tech`:``}.`);
+      incQuest("raid", 1);
+      if (Math.random() < 0.25) S.rad = clamp(S.rad - 1.5, 0, 100);
+    } else {
+      const lossChance = clamp(0.25 + (plan.threat - defensePower())*0.10, 0.15, 0.75);
+      if (Math.random() < lossChance && S.militia > 0) {
+        S.militia -= 1; S.pop -= 1;
+        popNearEl(srcEl || $("btnRaid"), `Lost a fighter`, "danger");
+        log(`Raid failed. You lost a fighter. POP -1, Militia -1.`, "danger");
+      } else {
+        popNearEl(srcEl || $("btnRaid"), `Raid failed`, "danger");
+        log(`Raid failed. You retreated with bruises and empty pockets.`, "danger");
+      }
       S.rad = clamp(S.rad + 2.0, 0, 100);
     }
   }
@@ -2330,7 +1993,6 @@ function addRep(id, amount){
 
     // Contracts (CivCrafter loop)
     checkContract();
-    checkOps();
 
     if (Math.random() < 0.01) save();
 
@@ -2389,7 +2051,7 @@ function addRep(id, amount){
       merged.factions.active = (data.factions && data.factions.active) || null;
 
       merged.contract = structuredClone(DEFAULT.contract);
-      merged.version = 6;
+      merged.version = 5;
       return merged;
     }
 
@@ -2405,40 +2067,17 @@ function addRep(id, amount){
       merged.factions.active = (data.factions && data.factions.active) || null;
 
       merged.contract = (data.contract) ? Object.assign(structuredClone(DEFAULT.contract), data.contract) : structuredClone(DEFAULT.contract);
-      merged.version = 6;
+      merged.version = 5;
       return merged;
     }
 
-    
-if (data.version === 5){
-      const merged = structuredClone(DEFAULT);
-      for (const k of Object.keys(merged)) {
-        if (data[k] !== undefined) merged[k] = data[k];
-      }
-      // Ensure nested structures exist
-      merged.factions = merged.factions || structuredClone(DEFAULT.factions);
-      merged.factions.rep = Object.assign(structuredClone(DEFAULT.factions.rep), (data.factions && data.factions.rep) || {});
-      merged.factions.rank = Object.assign(structuredClone(DEFAULT.factions.rank), (data.factions && data.factions.rank) || {});
-      merged.factions.active = (data.factions && data.factions.active) || null;
-
-      merged.contract = (data.contract) ? Object.assign(structuredClone(DEFAULT.contract), data.contract) : structuredClone(DEFAULT.contract);
-      merged.ops = (data.ops) ? Object.assign(structuredClone(DEFAULT.ops), data.ops) : structuredClone(DEFAULT.ops);
-
-      // Mark ready states if timers elapsed
-      if (merged.contract && merged.contract.active && !merged.contract.ready && now() >= (merged.contract.end||0)) merged.contract.ready = true;
-      if (merged.ops && merged.ops.active && !merged.ops.ready && now() >= (merged.ops.end||0)) merged.ops.ready = true;
-
-      merged.version = 6;
-      return merged;
-    }
-
-    if (data.version === 6) return data;
+    if (data.version === 5) return data;
     return null;
   }
 
   function load() {
     try {
-      const candidates = [KEY, "wasteland_outpost_save_v5", "wasteland_outpost_save_v3"];
+      const candidates = [KEY, "wasteland_outpost_save_v3"];
       for (const k of candidates){
         const raw = localStorage.getItem(k);
         if (!raw) continue;
@@ -2480,41 +2119,15 @@ if (data.version === 5){
 
     log(`You were away for ${Math.floor(elapsed/60)}m. The outpost kept running.`, "warn");
     checkContract();
-    checkOps();
   }
 
   // ---------- Event wiring ----------
   bindTap($("btnScavenge"), (e) => { flashBtn(e.currentTarget); haptic(8); scavengeTap(e.currentTarget); renderAll(); });
   bindTap($("btnPurify"), (e) => { flashBtn(e.currentTarget); haptic(8); purify(e.currentTarget); renderAll(); });
   bindTap($("btnRecruit"), (e) => { flashBtn(e.currentTarget); haptic(8); recruit(e.currentTarget); renderAll(); });
+  bindTap($("btnRaid"), (e) => { flashBtn(e.currentTarget); haptic(12); raid(e.currentTarget); renderAll(); });
   bindTap($("btnHealRad"), (e) => { flashBtn(e.currentTarget); haptic(8); decontaminate(e.currentTarget); renderAll(); });
   bindTap($("btnTrade"), (e) => { flashBtn(e.currentTarget); haptic(8); tradeScrap(e.currentTarget); renderAll(); });
-
-  // Battle: Operations UI
-  const battleOpsEl = $("battleOps");
-  if (battleOpsEl){
-    battleOpsEl.addEventListener("click", (e) => {
-      const btn = e.target.closest("button");
-      if (!btn) return;
-      const kind = btn.dataset.opsKind;
-      if (!kind) return;
-      openOpsDispatch(kind);
-    });
-  }
-  const battleStatsEl = $("battleStats");
-  if (battleStatsEl){
-    battleStatsEl.addEventListener("click", (e) => {
-      const btn = e.target.closest("button");
-      if (!btn) return;
-      const act = btn.dataset.opsAct;
-      if (act === "collect") {
-        collectOps();
-        renderAll();
-        queueSave();
-      }
-    });
-  }
-
 
   $("workerPanel").addEventListener("click", (e) => {
     const btn = e.target.closest("button");
