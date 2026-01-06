@@ -543,6 +543,26 @@
       to { opacity: 0; transform: translateY(8px); }
     }
 
+  
+    /* Battle ops */
+    .barOuter{
+      width:100%;
+      height:12px;
+      border-radius:999px;
+      border:1px solid rgba(31,58,42,.9);
+      background: linear-gradient(180deg, rgba(10,16,13,.9), rgba(7,10,8,.9));
+      overflow:hidden;
+    }
+    .barInner{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(60,255,122,.9), rgba(255,204,102,.55));
+      box-shadow: 0 0 18px rgba(60,255,122,.18);
+      border-radius:999px;
+      transition: width .25s ease;
+    }
+    .miniHint{ color: var(--muted); font-family: var(--sans); font-size: .82rem; line-height:1.3; }
+
   </style>
 </head>
 <body>
@@ -622,25 +642,46 @@
       </div>
     </section>
 
+    
     <!-- BATTLE -->
     <section class="screen" id="screen-battle">
       <div class="card">
-        <div class="cardHeader"><h2>Battle</h2><span class="tag">Raids</span></div>
+        <div class="cardHeader"><h2>Battle</h2><span class="tag">Operations</span></div>
         <div class="cardBody">
           <div class="rows" id="battleStats"></div>
+
           <div class="divider"></div>
-          <button class="btn" id="btnRaid">
-            <div class="left">
-              <div class="name">Raid Nearby Camp</div>
-              <div class="desc">Risk a fight to win loot (needs militia)</div>
+
+          <div class="rows" id="opSelect"></div>
+
+          <div class="divider"></div>
+
+          <div class="row">
+            <div class="label">Squad Size</div>
+            <div class="value" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+              <input id="opMilitia" type="range" min="0" max="0" value="0" step="1" style="width:min(320px, 52vw);" />
+              <span class="tag" id="opMilitiaVal">0</span>
             </div>
-            <small id="raidHint"></small>
+          </div>
+
+          <button class="btn" id="btnStartOp" disabled>
+            <div class="left">
+              <div class="name">Launch Operation</div>
+              <div class="desc" id="opStartDesc">Choose an operation and squad size</div>
+            </div>
+            <small id="opStartHint"></small>
           </button>
+
+          <div class="divider"></div>
+
+          <div class="rows" id="opActive"></div>
+
           <div class="divider"></div>
           <div class="rows" id="battleTips"></div>
         </div>
       </div>
     </section>
+
 
     <!-- TECH -->
     <section class="screen" id="screen-tech">
@@ -823,7 +864,7 @@
 
   // ---------- Game State ----------
   const DEFAULT = {
-    version: 5,
+    version: 6,
     t: now(),
     scrap: 20,
     food: 15,
@@ -874,7 +915,15 @@
       reward: null,      // {scrap, food, water, tech, caps}
       ready: false
     },
-  };
+  
+
+    // Battle: operations (send militia out; they don't defend while away)
+    ops: {
+      selected: "patrol", // "patrol" | "raid" | "assault"
+      active: null,       // { type, started, end, busy, threat, chance, supplies:{food,water}, rewards:{scrap,food,caps,techChance}, ready }
+      lastReport: null    // string
+    },
+};
 
   // Save key bumped because layout & version changed
   const KEY = "wasteland_outpost_save_v5";
@@ -885,9 +934,19 @@
   function housingCap() {
     return 3 + S.shack * 4 + (S.techs.workshop ? 3 : 0);
   }
-  function defensePower() {
-    return S.militia * 1.0 + S.turret * 2.2 + (S.techs.medbay ? 0.4 : 0);
+
+  function opsBusyMilitia(){
+    const a = S.ops && S.ops.active;
+    if (!a) return 0;
+    if (a.ready) return 0;
+    return Math.max(0, a.busy|0);
   }
+  function availableMilitia(){
+    return Math.max(0, (S.militia|0) - opsBusyMilitia());
+  }
+
+  function defensePower(){
+    return availableMilitia() * 1.0 + S.turret * 2.2 + (S.techs.medbay ? 0.4 : 0);}
   function productionPerSec() {
     const scavRate = (0.6 + S.shack*0.03) * S.scav;
     const foodRate = (0.45 + S.farm*0.12) * S.farmers;
@@ -1732,41 +1791,284 @@ function addRep(id, amount){
     }
   }
 
+
+  const OP_DEFS = {
+    patrol:  { name:"Patrol Perimeter", tag:"LOW RISK",  duration: 25, threatMult: 0.85, lootMult: 0.55, casualtyMult: 0.55, techChance: 0.10 },
+    raid:    { name:"Raid Nearby Camp", tag:"STANDARD", duration: 45, threatMult: 1.00, lootMult: 1.00, casualtyMult: 1.00, techChance: 0.25 },
+    assault: { name:"Assault Stronghold", tag:"HIGH RISK", duration: 70, threatMult: 1.25, lootMult: 1.55, casualtyMult: 1.35, techChance: 0.35 },
+  };
+
+  function opPlan(type, squad){
+    const def = OP_DEFS[type] || OP_DEFS.raid;
+    const baseThreat = 2.2 + S.day * 0.35 + (S.raidsWon * 0.7) + (S.pop * 0.08);
+    const threat = baseThreat * def.threatMult;
+
+    const squadPower = squad * 1.0 + (S.techs.medbay ? 0.15 : 0) + (S.techs.workshop ? 0.10 : 0);
+    const radPenalty = clamp((S.rad/100) * 0.25, 0, 0.25);
+
+    // Chance based on squad vs threat; patrol slightly easier, assault slightly harder via threatMult
+    const chance = clamp(0.20 + (squadPower - threat) * 0.18 - radPenalty, 0.05, 0.90);
+
+    const lootScrap = Math.floor((12 + threat * 8) * def.lootMult);
+    const lootFood  = Math.floor((6 + threat * 3) * def.lootMult);
+    const lootCaps  = Math.floor((4 + threat * 4) * def.lootMult);
+
+    // Supplies to launch (scales w/ threat; assault costs more by virtue of threatMult)
+    const foodCost  = 3 + Math.floor(threat * 1.2);
+    const waterCost = 2 + Math.floor(threat * 0.9);
+
+    return { type, def, threat, squadPower, chance, radPenalty, lootScrap, lootFood, lootCaps, foodCost, waterCost };
+  }
+
+  function checkOps(){
+    const a = S.ops && S.ops.active;
+    if (!a || a.ready) return;
+    if (now() >= a.end) a.ready = true;
+  }
+
+  function startOp(type, squad, srcEl=null){
+    if (!S.ops) S.ops = structuredClone(DEFAULT.ops);
+    if (S.ops.active && !S.ops.active.ready) { toast("Operation already running.", "warn"); return; }
+    squad = Math.floor(squad||0);
+    if (squad <= 0) { toast("Choose a squad size.", "warn"); return; }
+    if (squad > availableMilitia()) { toast("Not enough available militia.", "warn"); return; }
+
+    const p = opPlan(type, squad);
+
+    if (S.food < p.foodCost || S.water < p.waterCost){
+      toast(`Need Food ${p.foodCost} + Water ${p.waterCost}.`, "warn");
+      return;
+    }
+
+    S.food -= p.foodCost;
+    S.water -= p.waterCost;
+
+    const durMs = p.def.duration * 1000;
+    S.ops.active = {
+      type: p.type,
+      started: now(),
+      end: now() + durMs,
+      busy: squad,
+      threat: p.threat,
+      chance: p.chance,
+      supplies: { food: p.foodCost, water: p.waterCost },
+      rewards: { scrap: p.lootScrap, food: p.lootFood, caps: p.lootCaps, techChance: p.def.techChance },
+      ready: false
+    };
+
+    const label = OP_DEFS[p.type].name;
+    popNearEl(srcEl || $("btnStartOp"), `Sent ${squad}`, "good");
+    log(`Operation launched: ${label} (squad ${squad}). -${p.foodCost} Food, -${p.waterCost} Water.`);
+  }
+
+  function collectOp(srcEl=null){
+    const a = S.ops && S.ops.active;
+    if (!a || !a.ready) return;
+
+    const def = OP_DEFS[a.type] || OP_DEFS.raid;
+    const squad = a.busy|0;
+
+    const roll = Math.random();
+    const lootMult = (S.techs.radio ? 1.15 : 1) * (activeFactionBonus().loot || 1) * momentumMult();
+
+    if (roll < a.chance){
+      addMomentum(1);
+
+      const s = Math.floor(a.rewards.scrap * lootMult);
+      const f = Math.floor(a.rewards.food  * lootMult);
+      const c = Math.floor(a.rewards.caps  * lootMult);
+      S.scrap += s; S.food += f; S.caps += c;
+
+      let gotTech = 0;
+      if (Math.random() < a.rewards.techChance) { S.tech += 1; gotTech = 1; }
+
+      // Count toward raids for quests/meta on raid+assault (patrol is "practice")
+      if (a.type !== "patrol"){
+        S.raidsWon += 1;
+        incQuest("raid", 1);
+      }
+
+      if (Math.random() < 0.22) S.rad = clamp(S.rad - 1.2, 0, 100);
+
+      const rep = `SUCCESS — +${s} Scrap, +${f} Food, +${c} Caps${gotTech?`, +1 Tech`:``}.`;
+      S.ops.lastReport = rep;
+      popNearEl(srcEl || $("btnStartOp"), `Success`, "good");
+      log(`Operation report: ${def.name}. ${rep}`);
+    } else {
+      // Casualties possible on failure (and sometimes even on success? keep simple: failure only)
+      const baseCas = clamp(0.12 + (a.threat - (squad*1.0))*0.10 + a.radPenalty, 0.08, 0.80);
+      const casChance = clamp(baseCas * def.casualtyMult, 0.08, 0.90);
+      let lost = 0;
+
+      if (Math.random() < casChance && squad > 0){
+        // Lose 1 to max(1, floor(squad*0.35)) depending on how outmatched you were
+        const maxLoss = clamp(1 + Math.floor(squad * 0.35), 1, squad);
+        lost = clamp(1 + Math.floor(Math.random()*maxLoss), 1, squad);
+        S.militia = Math.max(0, S.militia - lost);
+        S.pop = Math.max(0, S.pop - lost);
+      }
+
+      S.rad = clamp(S.rad + 1.8, 0, 100);
+
+      const rep = lost > 0
+        ? `FAILED — you lost ${lost} militia.`
+        : `FAILED — your squad retreated battered but alive.`;
+
+      S.ops.lastReport = rep;
+      popNearEl(srcEl || $("btnStartOp"), lost ? `Lost ${lost}` : `Failed`, "danger");
+      log(`Operation report: ${def.name}. ${rep}`, "danger");
+    }
+
+    // Clear active op
+    S.ops.active = null;
+  }
+
   function renderBattle() {
     const stats = $("battleStats");
     const tips = $("battleTips");
-    if (!stats || !tips) return;
+    const opSelect = $("opSelect");
+    const opMil = $("opMilitia");
+    const opMilVal = $("opMilitiaVal");
+    const startBtn = $("btnStartOp");
+    const startDesc = $("opStartDesc");
+    const startHint = $("opStartHint");
+    const opActive = $("opActive");
+    if (!stats || !tips || !opSelect || !opMil || !opMilVal || !startBtn || !startDesc || !startHint || !opActive) return;
 
-    const plan = raidPlan();
-    const need = Math.max(1, Math.floor(plan.threat * 0.6));
+    if (!S.ops) S.ops = structuredClone(DEFAULT.ops);
+    checkOps();
+
+    const selected = S.ops.selected || "patrol";
+    const busy = opsBusyMilitia();
+    const avail = availableMilitia();
+    const yourDef = defensePower();
+
+    // Slider
+    opMil.max = String(avail);
+    if (avail <= 0){
+      opMil.value = "0";
+      opMil.disabled = true;
+    } else {
+      opMil.disabled = false;
+      const v = clamp(parseInt(opMil.value||"0",10) || 0, 0, avail);
+      opMil.value = String(v);
+    }
+    opMilVal.textContent = opMil.value;
+
+    // Stats
     stats.innerHTML = "";
-    tips.innerHTML = "";
-
     const rows = [
-      ["Threat Level", fmt(plan.threat), "Camp strength"],
-      ["Your Defense", fmt(plan.your), "Militia + turrets"],
-      ["Win Chance", `${Math.round(plan.chance*100)}%`, "Approx."],
-      ["Suggested Militia", need, "For comfort"],
+      ["Available Militia", avail, "Can be sent out"],
+      ["Militia Out", busy, "Away on ops"],
+      ["Base Defense", fmt(yourDef), "Turrets + available militia"],
       ["Raids Won", S.raidsWon, "Lifetime"],
+      ["Radiation", `${Math.round(S.rad)}%`, "Hurts op success"],
     ];
-    for (const [label, val, tip] of rows) {
+    for (const [label, val, tip] of rows){
       const r = document.createElement("div");
       r.className = "row";
       r.innerHTML = `<div class="label">${label}</div><div class="value">${val} <span class="tag">${tip}</span></div>`;
       stats.appendChild(r);
     }
 
-    const prod = productionPerSec();
-    const note = document.createElement("div");
-    note.className = "row";
-    note.innerHTML = `<div class="label">Tip</div><div class="value">If RAD is high, decontaminate before raiding. <span class="tag">RAD + fights = bad</span></div>`;
-    tips.appendChild(note);
+    // Op select buttons
+    opSelect.innerHTML = "";
+    const active = S.ops.active;
 
-    const econ = document.createElement("div");
-    econ.className = "row";
-    econ.innerHTML = `<div class="label">Upkeep</div><div class="value">Your outpost consumes ${fmt(prod.foodUse)}/s Food and ${fmt(prod.waterUse)}/s Water. <span class="tag">Bigger pop = bigger costs</span></div>`;
-    tips.appendChild(econ);
+    for (const key of ["patrol","raid","assault"]){
+      const d = OP_DEFS[key];
+      const p = opPlan(key, Math.max(1, Math.min(avail||1, parseInt(opMil.value||"1",10)||1)));
+      const btn = document.createElement("button");
+      btn.className = "btn";
+      btn.dataset.op = key;
+      btn.disabled = !!(active && !active.ready);
+      btn.innerHTML = `
+        <div class="left">
+          <div class="name">${d.name}</div>
+          <div class="desc">${d.tag} · ${d.duration}s · Win ~${Math.round(p.chance*100)}%</div>
+        </div>
+        <small>Food ${p.foodCost}<br/>Water ${p.waterCost}</small>
+      `;
+      if (key === selected) btn.style.borderColor = "rgba(60,255,122,.85)";
+      opSelect.appendChild(btn);
+    }
+
+    // Start button state
+    const squad = parseInt(opMil.value||"0",10)||0;
+    const p = opPlan(selected, Math.max(1, squad||1));
+    const canStart = !active && squad > 0 && squad <= avail && (S.food >= p.foodCost) && (S.water >= p.waterCost);
+
+    startBtn.disabled = !canStart;
+    startDesc.textContent = active
+      ? "Operation in progress — wait for the report"
+      : `Launch ${OP_DEFS[selected].name} with ${squad||0} militia`;
+    startHint.innerHTML = active
+      ? `IN PROGRESS`
+      : `Need FOOD ${p.foodCost}<br/>WATER ${p.waterCost}`;
+
+    // Active op panel
+    opActive.innerHTML = "";
+    if (active){
+      const d = OP_DEFS[active.type] || OP_DEFS.raid;
+      const remaining = Math.max(0, active.end - now());
+      const dur = Math.max(1, (active.end - active.started));
+      const pct = clamp(1 - (remaining / dur), 0, 1);
+
+      const wrap = document.createElement("div");
+      wrap.className = "row";
+      wrap.style.flexDirection = "column";
+      wrap.style.alignItems = "stretch";
+      wrap.style.gap = "10px";
+      wrap.innerHTML = `
+        <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+          <div>
+            <div class="label">Active Operation</div>
+            <div class="value" style="margin-top:2px;">${d.name} <span class="tag">Squad ${active.busy}</span></div>
+            <div class="miniHint">Win chance at launch: ${Math.round(active.chance*100)}% · Threat ${fmt(active.threat)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="tag">${active.ready ? "READY" : `${Math.ceil(remaining/1000)}s`}</div>
+          </div>
+        </div>
+        <div class="barOuter" aria-label="Operation progress"><div class="barInner" style="width:${Math.round(pct*100)}%"></div></div>
+        <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <div class="miniHint">While away, militia do not defend the outpost.</div>
+          <button class="fbtn fbtnPrimary" id="btnCollectOp" ${active.ready ? "" : "disabled"}>COLLECT REPORT</button>
+        </div>
+      `;
+      opActive.appendChild(wrap);
+    } else if (S.ops.lastReport){
+      const r = document.createElement("div");
+      r.className = "row";
+      r.innerHTML = `<div class="label">Last Report</div><div class="value">${S.ops.lastReport} <span class="tag">Ops</span></div>`;
+      opActive.appendChild(r);
+    } else {
+      const r = document.createElement("div");
+      r.className = "row";
+      r.innerHTML = `<div class="label">Operations</div><div class="value">Send militia to scout, raid, or assault. <span class="tag">Time-based</span></div>`;
+      opActive.appendChild(r);
+    }
+
+    // Tips
+    tips.innerHTML = "";
+    const prod = productionPerSec();
+
+    const t1 = document.createElement("div");
+    t1.className = "row";
+    t1.innerHTML = `<div class="label">Tip</div><div class="value">High RAD lowers success chance. Decontaminate before risky ops. <span class="tag">RAD matters</span></div>`;
+    tips.appendChild(t1);
+
+    const t2 = document.createElement("div");
+    t2.className = "row";
+    t2.innerHTML = `<div class="label">Supplies</div><div class="value">Operations cost Food/Water to launch. Your outpost also consumes ${fmt(prod.foodUse)}/s Food and ${fmt(prod.waterUse)}/s Water. <span class="tag">Plan ahead</span></div>`;
+    tips.appendChild(t2);
+
+    const t3 = document.createElement("div");
+    t3.className = "row";
+    t3.innerHTML = `<div class="label">Defense</div><div class="value">If you send everyone out, your base defense drops. Build turrets to stay safe. <span class="tag">Turrets help</span></div>`;
+    tips.appendChild(t3);
   }
+
 
   function renderActionCosts() {
     const p = purifyCost();
@@ -1781,10 +2083,6 @@ function addRep(id, amount){
 
     const tr = tradeCost();
     if ($("tradeCost")) $("tradeCost").innerHTML = `SCRAP ${tr.scrap}<br/>+CAPS ${tr.capsGain}`;
-
-    const raid = raidPlan();
-    const need = Math.max(1, Math.floor(raid.threat * 0.6));
-    if ($("raidHint")) $("raidHint").innerHTML = `Need MILITIA ~${need}<br/>Win ${Math.round(raid.chance*100)}%`;
   }
 
   function renderAll() {
@@ -1993,6 +2291,7 @@ function addRep(id, amount){
 
     // Contracts (CivCrafter loop)
     checkContract();
+    checkOps();
 
     if (Math.random() < 0.01) save();
 
@@ -2071,8 +2370,20 @@ function addRep(id, amount){
       return merged;
     }
 
-    if (data.version === 5) return data;
+    // v5 -> v6: add battle operations state
+    if (data.version === 5){
+      const merged = structuredClone(DEFAULT);
+      for (const k of Object.keys(merged)) {
+        if (data[k] !== undefined) merged[k] = data[k];
+      }
+      merged.ops = (data.ops) ? Object.assign(structuredClone(DEFAULT.ops), data.ops) : structuredClone(DEFAULT.ops);
+      merged.version = 6;
+      return merged;
+    }
+
+    if (data.version === 6) return data;
     return null;
+
   }
 
   function load() {
@@ -2119,15 +2430,58 @@ function addRep(id, amount){
 
     log(`You were away for ${Math.floor(elapsed/60)}m. The outpost kept running.`, "warn");
     checkContract();
+    checkOps();
   }
 
   // ---------- Event wiring ----------
   bindTap($("btnScavenge"), (e) => { flashBtn(e.currentTarget); haptic(8); scavengeTap(e.currentTarget); renderAll(); });
   bindTap($("btnPurify"), (e) => { flashBtn(e.currentTarget); haptic(8); purify(e.currentTarget); renderAll(); });
   bindTap($("btnRecruit"), (e) => { flashBtn(e.currentTarget); haptic(8); recruit(e.currentTarget); renderAll(); });
-  bindTap($("btnRaid"), (e) => { flashBtn(e.currentTarget); haptic(12); raid(e.currentTarget); renderAll(); });
   bindTap($("btnHealRad"), (e) => { flashBtn(e.currentTarget); haptic(8); decontaminate(e.currentTarget); renderAll(); });
   bindTap($("btnTrade"), (e) => { flashBtn(e.currentTarget); haptic(8); tradeScrap(e.currentTarget); renderAll(); });
+
+  // Battle operations wiring
+  const opMilEl = $("opMilitia");
+  if (opMilEl){
+    opMilEl.addEventListener("input", () => {
+      if ($("opMilitiaVal")) $("opMilitiaVal").textContent = opMilEl.value;
+      renderBattle();
+      queueSave();
+    });
+  }
+
+  const opSelEl = $("opSelect");
+  if (opSelEl){
+    opSelEl.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-op]");
+      if (!btn) return;
+      if (!S.ops) S.ops = structuredClone(DEFAULT.ops);
+      S.ops.selected = btn.dataset.op;
+      renderBattle();
+      queueSave();
+    });
+  }
+
+  bindTap($("btnStartOp"), (e) => {
+    flashBtn(e.currentTarget); haptic(12);
+    const type = (S.ops && S.ops.selected) ? S.ops.selected : "patrol";
+    const squad = parseInt($("opMilitia")?.value || "0", 10) || 0;
+    startOp(type, squad, e.currentTarget);
+    renderAll();
+    queueSave();
+  });
+
+  const opActiveEl = $("opActive");
+  if (opActiveEl){
+    opActiveEl.addEventListener("click", (e) => {
+      const btn = e.target.closest("#btnCollectOp");
+      if (!btn) return;
+      flashBtn(btn); haptic(10);
+      collectOp(btn);
+      renderAll();
+      queueSave();
+    });
+  }
 
   $("workerPanel").addEventListener("click", (e) => {
     const btn = e.target.closest("button");
@@ -2353,7 +2707,7 @@ return;
     showModal("How to Play", `
       <p><b>Resources</b>: tap <span class="kbd">Scavenge</span>, then assign settlers to automate.</p>
       <p><b>Build</b>: Shacks raise housing, Farms & Purifiers raise production, Turrets raise defense.</p>
-      <p><b>Battle</b>: assign Militia, then raid for loot. More defense = better win chance.</p>
+      <p><b>Battle</b>: run time-based operations (Patrol/Raid/Assault). Choose a squad size; militia sent out won’t defend until they return.</p>
       <p><b>Radiation</b>: grows with time/pop. Use <span class="kbd">Decontaminate</span> (stronger with Medbay).</p>
       <p><b>Tip</b>: Early game is usually Water‑limited—build a Purifier and assign Purifier Crew.</p>
     `);
