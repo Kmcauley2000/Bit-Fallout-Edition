@@ -469,6 +469,100 @@
       opacity:.95;
     }
 
+
+/* --- Factions 2.0: clean mobile list + detail card --- */
+.bar.mini{ height:8px; opacity:.95; }
+.fList{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:6px;
+}
+.fPick{
+  width:100%;
+  text-align:left;
+  border-radius:16px;
+  padding:12px 12px 10px;
+  border:1px solid rgba(31,58,42,.85);
+  background: rgba(0,0,0,.14);
+  color:var(--text);
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.fPick.on{
+  border-color: rgba(60,255,122,.55);
+  background: linear-gradient(180deg, rgba(60,255,122,.10), rgba(0,0,0,.10));
+  box-shadow: 0 0 0 1px rgba(60,255,122,.12);
+}
+.fPickTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
+  flex-wrap:wrap;
+}
+.fPickName{
+  font-family:var(--mono);
+  color:var(--accent);
+  font-size:.9rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.fDetail{
+  margin-top:12px;
+  padding:12px;
+  border-radius:20px;
+  border:1px solid rgba(31,58,42,.9);
+  background: linear-gradient(180deg, rgba(16,26,20,.55), rgba(10,16,13,.55));
+  box-shadow: 0 12px 28px rgba(0,0,0,.28);
+}
+.fActions2{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top:12px;
+}
+.fSmall{ display:flex; flex-direction:column; gap:8px; }
+.fbtn2{
+  width:100%;
+  min-height:54px;
+  border-radius:16px;
+  padding:12px 14px;
+  font-family:var(--mono);
+  color:var(--text);
+  font-weight:900;
+  letter-spacing:.6px;
+  text-transform:uppercase;
+  border:1px solid rgba(44,112,68,.55);
+  background:linear-gradient(180deg, rgba(8,16,12,.9), rgba(6,10,8,.92));
+  box-shadow: 0 10px 24px rgba(0,0,0,.28);
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.fbtn2.primary{
+  border-color: rgba(60,255,122,.65);
+  background: linear-gradient(180deg, rgba(60,255,122,.22), rgba(60,255,122,.08));
+  box-shadow: 0 0 0 1px rgba(60,255,122,.18), 0 12px 30px rgba(0,0,0,.34);
+}
+.fbtn2.secondary{
+  min-height:48px;
+  border-color: rgba(31,58,42,.95);
+  color: var(--muted);
+  font-weight: 800;
+  text-transform:none;
+  letter-spacing: 0;
+  background: linear-gradient(180deg, rgba(16,26,20,.78), rgba(13,21,17,.78));
+  box-shadow:none;
+}
+.fbtn2.danger{
+  border-color: rgba(255,107,107,.65);
+  background: linear-gradient(180deg, rgba(255,107,107,.20), rgba(255,107,107,.06));
+  box-shadow: 0 0 0 1px rgba(255,107,107,.16), 0 12px 30px rgba(0,0,0,.34);
+}
+.fbtn2[disabled]{ opacity:.42; filter:saturate(.6); cursor:not-allowed; }
+.fPick:active, .fbtn2:active{ transform: translateY(1px) scale(.99); }
+
   
     /* ---------- Tap feedback ---------- */
     .btn.tapFlash, .fbtn.tapFlash, .miniBtn.tapFlash, .closeBtn.tapFlash, .tab.tapFlash{
@@ -613,6 +707,18 @@
       .tabbar{ gap:8px; padding-left:10px; padding-right:10px; }
       .tab{ min-width: 92px; }
     }
+
+    /* Factions: inline expand/collapse inside each faction card (mobile-friendly) */
+    .fCard{ border:1px solid rgba(31,58,42,.7); border-radius:16px; background: rgba(7,12,10,.55); overflow:hidden; }
+    .fCard + .fCard{ margin-top: 10px; }
+    .fPick{ width:100%; text-align:left; border:0; background: transparent; padding:12px; }
+    .fPick.on{ background: rgba(34, 85, 58, .18); }
+    .fInline{ display:none; padding: 0 12px 12px; }
+    .fCard.expanded .fInline{ display:block; }
+    .fInline .tag{ margin-right:6px; }
+    .fInline .fActions2{ margin-top:10px; }
+    .fInline .fbtn2{ width:100%; }
+
 </style>
 </head>
 <body>
@@ -796,6 +902,8 @@
     <div class="modalBody" id="modalBody"></div>
   </dialog>
 
+  <!-- Faction details are rendered inline inside each faction card -->
+
   <div id="toastHost" aria-live="polite" aria-atomic="true"></div>
 
 <script>
@@ -954,12 +1062,17 @@
     // Expansion: daily quest
     quests: { last: 0, done: false, target: null, progress: 0, rewardCaps: 40, rewardTech: 2 },
 
-    // Expansion: factions
-    factions: {
-      active: null, // "bos" | "ncr" | "followers" | "raiders" | "enclave"
-      rep: { bos: 0, ncr: 0, followers: 0, raiders: 0, enclave: 0 },
-      rank: { bos: 0, ncr: 0, followers: 0, raiders: 0, enclave: 0 },
-    },
+    
+// Expansion: factions
+factions: {
+  active: null,              // sponsored faction (one at a time)
+  cooldownUntil: 0,          // timestamp; prevents rapid swapping
+  uiSelected: "bos",         // which faction card is open in the UI
+  streakId: null,            // last faction you completed a contract for
+  streak: 0,                 // 0..5 (adds small bonus to keep you looping)
+  rep: { bos: 0, ncr: 0, followers: 0, raiders: 0, enclave: 0 },
+  rank: { bos: 0, ncr: 0, followers: 0, raiders: 0, enclave: 0 },
+},
 
     // Expansion: faction contract (one at a time; feels like CivCrafter "send a party")
     contract: {
@@ -1151,16 +1264,31 @@
     { name:"Champion", min: 80 },
   ];
 
-  function ensureFactions(){
-    if (!S.factions) S.factions = structuredClone(DEFAULT.factions);
-    if (!S.factions.rep) S.factions.rep = structuredClone(DEFAULT.factions.rep);
-    if (!S.factions.rank) S.factions.rank = structuredClone(DEFAULT.factions.rank);
-    if (S.factions.active === undefined) S.factions.active = null;
-    for (const id of Object.keys(FACTIONS)){
-      if (S.factions.rep[id] === undefined) S.factions.rep[id] = 0;
-      if (S.factions.rank[id] === undefined) S.factions.rank[id] = 0;
-    }
+  
+function ensureFactions(){
+  // Back/forward compatible init
+  if (!S.factions) S.factions = structuredClone(DEFAULT.factions);
+
+  // Legacy keys
+  if (S.factions.active === undefined) S.factions.active = null;
+  if (S.factions.rep === undefined) S.factions.rep = structuredClone(DEFAULT.factions.rep);
+  if (S.factions.rank === undefined) S.factions.rank = structuredClone(DEFAULT.factions.rank);
+
+  // New keys (clean mobile faction UI + addictive streak loop)
+  if (S.factions.cooldownUntil === undefined) S.factions.cooldownUntil = 0;
+  if (S.factions.uiSelected === undefined) S.factions.uiSelected = (S.factions.active || "bos");
+  if (S.factions.streakId === undefined) S.factions.streakId = null;
+  if (S.factions.streak === undefined) S.factions.streak = 0;
+
+  // Ensure all factions exist (safe if new factions are added later)
+  for (const id of Object.keys(FACTIONS)){
+    if (S.factions.rep[id] === undefined) S.factions.rep[id] = 0;
+    if (S.factions.rank[id] === undefined) S.factions.rank[id] = 0;
   }
+  // Clamp
+  if (S.factions.streak < 0) S.factions.streak = 0;
+  if (S.factions.streak > 5) S.factions.streak = 5;
+}
 
   function ensureContract(){
     if (!S.contract) S.contract = structuredClone(DEFAULT.contract);
@@ -1232,49 +1360,74 @@
     log(`${label} dispatched for ${fName}. ETA ${fmtTime(def.dur)}.`, "warn");
   }
 
-  function finishContract(){
-    ensureContract(); ensureFactions();
-    if (!S.contract.active) return;
-    S.idle += (S.contract.busy || 0);
+  
+function finishContract(){
+  ensureContract(); ensureFactions();
+  if (!S.contract.active) return;
 
-    const id = S.contract.faction;
-    const reward = S.contract.reward || {};
-    for (const k of ["scrap","food","water","tech","caps"]) S[k] += (reward[k] || 0);
+  // Return the settler
+  S.idle += (S.contract.busy || 0);
 
-    // REP gain
-    if (id && S.factions.rep[id] !== undefined){
-      S.factions.rep[id] = clamp((S.factions.rep[id]||0) + (S.contract.repGain||0), 0, 100);
-      const newRank = rankForRep(S.factions.rep[id]);
-      const oldRank = S.factions.rank[id] || 0;
-      S.factions.rank[id] = newRank;
-      if (newRank > oldRank) log(`${FACTIONS[id].name}: rank up → ${rankName(newRank)}.`, "warn");
+  const id = S.contract.faction;
+  const baseReward = S.contract.reward || {};
+
+  // ===== Streak (addictive micro-loop): keep running jobs for the same faction =====
+  if (id){
+    if (S.factions.streakId === id) {
+      S.factions.streak = clamp((S.factions.streak||0) + 1, 0, 5);
+    } else {
+      S.factions.streakId = id;
+      S.factions.streak = 1;
     }
-
-    // Relic drop
-    if (Math.random() < (S.contract.relicChance || 0)) {
-      const extra = 1 + (S.contract.tier===1 ? 1 : 0);
-      S.tech += extra;
-      log(`Relic recovered! +${extra} TECH.`, "warn");
-    }
-
-    // Flavor
-    const bits = [];
-    if (reward.scrap) bits.push(`+${reward.scrap} Scrap`);
-    if (reward.food) bits.push(`+${reward.food} Food`);
-    if (reward.water) bits.push(`+${reward.water} Water`);
-    if (reward.tech) bits.push(`+${reward.tech} Tech`);
-    if (reward.caps) bits.push(`+${reward.caps} Caps`);
-    log(`Contract complete (${FACTIONS[id]?.name || "Faction"}). ${bits.join(", ")}. +${S.contract.repGain||0} REP.`, "warn");
-
-    S.contract.active = false;
-    S.contract.ready = false;
-    S.contract.faction = null;
-    S.contract.name = null;
-    S.contract.reward = null;
-    S.contract.busy = 0;
-    S.contract.repGain = 0;
-    S.contract.end = 0;
+  } else {
+    S.factions.streakId = null;
+    S.factions.streak = 0;
   }
+
+  const streak = (S.factions.streakId === id) ? (S.factions.streak||0) : 0;
+  const streakMult = 1 + Math.max(0, streak - 1) * 0.05; // up to +20%
+  const reward = {};
+  for (const k of ["scrap","food","water","tech","caps"]){
+    reward[k] = Math.floor((baseReward[k] || 0) * streakMult);
+    S[k] += reward[k];
+  }
+
+  // REP gain (small extra per streak step after the first)
+  let repGain = (S.contract.repGain || 0) + Math.max(0, streak - 1);
+  if (id && S.factions.rep[id] !== undefined){
+    const before = S.factions.rep[id] || 0;
+    addRep(id, repGain);
+    const after = S.factions.rep[id] || 0;
+    // If we didn't move (already capped) keep rank synced
+    S.factions.rank[id] = rankForRep(after);
+  }
+
+  // Relic drop
+  if (Math.random() < (S.contract.relicChance || 0)) {
+    const extra = 1 + (S.contract.tier===1 ? 1 : 0);
+    S.tech += extra;
+    log(`Relic recovered! +${extra} TECH.`, "warn");
+  }
+
+  // Flavor
+  const bits = [];
+  if (reward.scrap) bits.push(`+${reward.scrap} Scrap`);
+  if (reward.food) bits.push(`+${reward.food} Food`);
+  if (reward.water) bits.push(`+${reward.water} Water`);
+  if (reward.tech) bits.push(`+${reward.tech} Tech`);
+  if (reward.caps) bits.push(`+${reward.caps} Caps`);
+  const streakBit = streak >= 2 ? ` · Streak x${fmt(streakMult)} (+${Math.max(0,streak-1)} REP)` : ``;
+  log(`Contract complete (${FACTIONS[id]?.name || "Faction"}). ${bits.join(", ")}. +${repGain} REP${streakBit}.`, "warn");
+
+  S.contract.active = false;
+  S.contract.ready = false;
+  S.contract.faction = null;
+  S.contract.name = null;
+  S.contract.reward = null;
+  S.contract.busy = 0;
+  S.contract.repGain = 0;
+  S.contract.end = 0;
+}
 
   function checkContract(){
     ensureContract();
@@ -1376,22 +1529,66 @@ function addRep(id, amount){
     log(`Donation delivered to ${FACTIONS[id].name}. +${repGain} REP.` + (mm>1?` (Momentum +${Math.round((mm-1)*100)}%)`:``), "warn");
   }
 
-  function setActiveFaction(id){
-    ensureFactions();
-    if (!FACTIONS[id]) return;
-    const rep = S.factions.rep[id] || 0;
-    if (rep < 20){ log("Earn at least 20 REP to ally with a faction.", "warn"); return; }
-    S.factions.active = id;
-    log(`You are now aligned with ${FACTIONS[id].name}.`, "warn");
+  
+function sponsorCost(nextId){
+  // Simple, readable: switching sponsors costs caps, scales gently with your day
+  const day = Math.max(1, Math.floor(S.day||1));
+  const base = 18 + Math.floor(day * 1.2);
+  return base;
+}
+
+function canSwapSponsor(){
+  ensureFactions();
+  const left = Math.max(0, (S.factions.cooldownUntil||0) - now());
+  return left <= 0;
+}
+
+function sponsorFaction(id){
+  ensureFactions();
+  if (!FACTIONS[id]) return;
+
+  const rep = S.factions.rep[id] || 0;
+  if (rep < 20){ log("Earn at least 20 REP to get a faction sponsor.", "warn"); return; }
+
+  const left = Math.max(0, (S.factions.cooldownUntil||0) - now());
+  if (left > 0){
+    toast(`Sponsor locked — ${fmtTime(left)} remaining.`, "warn");
+    return;
   }
 
-  function clearActiveFaction(){
-    ensureFactions();
-    if (!S.factions.active) return;
-    const prev = S.factions.active;
-    S.factions.active = null;
-    log(`You stepped back from ${FACTIONS[prev]?.name || "a faction"}.`, "warn");
+  const prev = S.factions.active;
+  if (prev === id){ toast("Already your sponsor.", "warn"); return; }
+
+  // First sponsor is free; swaps cost caps
+  if (prev){
+    const cost = sponsorCost(id);
+    if (S.caps < cost){ log(`Not enough Caps to switch sponsor (need ${cost}).`, "warn"); return; }
+    S.caps -= cost;
   }
+
+  S.factions.active = id;
+  S.factions.uiSelected = id;
+
+  // Cooldown (mobile-friendly pacing)
+  S.factions.cooldownUntil = now() + 10*60*1000;
+
+  // Reset streak when you swap sponsors (keeps choices meaningful)
+  S.factions.streakId = null;
+  S.factions.streak = 0;
+
+  log(`Sponsor secured: ${FACTIONS[id].name}.`, "warn");
+}
+
+function clearActiveFaction(){
+  ensureFactions();
+  if (!S.factions.active) return;
+  const prev = S.factions.active;
+  S.factions.active = null;
+  S.factions.uiSelected = S.factions.uiSelected || "bos";
+  S.factions.streakId = null;
+  S.factions.streak = 0;
+  log(`You ended your sponsorship with ${FACTIONS[prev]?.name || "a faction"}.`, "warn");
+}
 
   // Apply faction bonuses to production and defense (layered on top of prestige).
   const _prodAfterPrestige = productionPerSec;
@@ -1634,7 +1831,7 @@ function addRep(id, amount){
     }
   }
 
-  function renderFactions(){
+    function renderFactions(){
     ensureFactions();
     ensureContract();
     const sum = $("factionSummary");
@@ -1644,29 +1841,30 @@ function addRep(id, amount){
     sum.innerHTML = "";
     panel.innerHTML = "";
 
-    const active = S.factions.active;
+    const sponsor = S.factions.active;
+    const selected = S.factions.uiSelected || sponsor || "bos";
     const b = activeFactionBonus();
 
-    // --- Summary (CivCrafter vibe: clear next carrots) ---
+    const cdLeft = Math.max(0, (S.factions.cooldownUntil||0) - now());
+    const cdTxt = cdLeft > 0 ? ` · Swap in ${fmtTime(cdLeft)}` : "";
+
+    // ===== Summary (simple + addictive) =====
     const r0 = document.createElement("div");
     r0.className = "row";
     r0.innerHTML = `
-      <div class="label">Aligned</div>
-      <div class="value">${active ? (FACTIONS[active]?.name || active) : "None"} <span class="tag">${active ? (rankName(S.factions.rank[active]||0)) : "Neutral"}</span></div>
+      <div class="label">Sponsor</div>
+      <div class="value">${sponsor ? (FACTIONS[sponsor]?.name || sponsor) : "None"} <span class="tag">${sponsor ? rankName(S.factions.rank[sponsor]||0) : "Neutral"}</span><span class="tag">${cdLeft>0 ? "Cooldown" : "Ready"}</span></div>
     `;
     sum.appendChild(r0);
 
     const r1 = document.createElement("div");
     r1.className = "row";
     r1.innerHTML = `
-      <div class="label">Active bonuses</div>
-      <div class="value">${active ? `Defense +${fmt(b.defFlat||0)}, Prod x${fmt(b.prod||1)}, Caps x${fmt(b.caps||1)}, RAD x${fmt(1/(b.radRes||1))}, Loot x${fmt(b.loot||1)}` : "—"} <span class="tag">Momentum +${Math.round((momentumMult()-1)*100)}%</span> <span class="tag">Only 1 ally</span></div>
+      <div class="label">Bonuses</div>
+      <div class="value">${sponsor ? `Defense +${fmt(b.defFlat||0)} · Prod x${fmt(b.prod||1)} · Caps x${fmt(b.caps||1)} · RAD x${fmt(1/(b.radRes||1))} · Loot x${fmt(b.loot||1)}` : "—"} <span class="tag">Streak ${S.factions.streak||0}/5</span></div>
     `;
     sum.appendChild(r1);
 
-    // Contract status
-    const cr = document.createElement("div");
-    cr.className = "row";
     const c = S.contract;
     const cActive = contractActive();
     const cReady = contractReady();
@@ -1675,9 +1873,11 @@ function addRep(id, amount){
     const statusChip = cReady ? `<span class="chip good pulse">READY</span>`
                       : cActive ? `<span class="chip warn">IN PROGRESS · ${fmtTime(left)}</span>`
                       : `<span class="chip">IDLE</span>`;
+    const cr = document.createElement("div");
+    cr.className = "row";
     cr.innerHTML = `
       <div class="label">Contract</div>
-      <div class="value">${statusChip} <span class="tag">${cActive||cReady ? `${facName} · ${c.name || "Operation"}` : "Start one to earn loot + REP"}</span></div>
+      <div class="value">${statusChip} <span class="tag">${cActive||cReady ? `${facName}` : "Run jobs for loot + REP"}</span></div>
     `;
     sum.appendChild(cr);
 
@@ -1696,7 +1896,7 @@ function addRep(id, amount){
       const btnRow = document.createElement("div");
       btnRow.className = "row";
       btnRow.innerHTML = `
-        <div class="label">Payout</div>
+        <div class="label">Report</div>
         <div class="value" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
           <span class="tag">${rewardText(c.reward)} <span class="tag">+${c.repGain} REP</span></span>
           <button class="miniBtn primary pulse" data-fact-act="collect" data-fact-id="${c.faction}">Collect</button>
@@ -1705,72 +1905,33 @@ function addRep(id, amount){
       sum.appendChild(btnRow);
     }
 
-    // --- Per faction cards ---
+    // ===== Mobile menu: faction cards with inline expandable details =====
+    const list = document.createElement("div");
+    list.className = "fList";
+
     for (const id of Object.keys(FACTIONS)){
       const f = FACTIONS[id];
       const rep = clamp(S.factions.rep[id] || 0, 0, 100);
       const rank = clamp(S.factions.rank[id] || rankForRep(rep), 0, 3);
-      const isActive = (S.factions.active === id);
+      const isSelected = (selected === id);
+      const isSponsor = (sponsor === id);
 
-      const locked = (S.factions.active && S.factions.active !== id);
-      const activeName = S.factions.active ? (FACTIONS[S.factions.active]?.name || S.factions.active) : "";
+      const card = document.createElement("div");
+      card.className = "fCard" + (isSelected ? " expanded" : "");
 
-      const wrap = document.createElement("div");
-      wrap.className = "row";
-      wrap.style.flexDirection = "column";
-      wrap.style.alignItems = "stretch";
-      wrap.style.gap = "10px";
-
-      const head = document.createElement("div");
-      head.style.display = "flex";
-      head.style.justifyContent = "space-between";
-      head.style.gap = "10px";
-      head.style.flexWrap = "wrap";
+      const head = document.createElement("button");
+      head.className = "fPick" + (isSelected ? " on" : "");
+      head.setAttribute("data-fact-act","pick");
+      head.setAttribute("data-fact-id", id);
       head.innerHTML = `
-        <div style="min-width:0;">
-          <div style="font-family:var(--mono); color:var(--accent); font-size:0.9rem;">
-            ${f.name} ${isActive ? '<span class="tag">ACTIVE</span>' : ''}
-          </div>
-          <div style="font-family:var(--sans); color:var(--muted); font-size:0.82rem; line-height:1.25;">
-            ${f.tag} · ${f.desc}
-          </div>
+        <div class="fPickTop">
+          <span class="fPickName">${f.name}</span>
+          <span class="tag">${rankName(rank)}</span>
+          ${isSponsor ? `<span class="tag">SPONSOR</span>` : ``}
         </div>
-        <div style="text-align:right;">
-          <div style="font-family:var(--mono);">REP ${Math.round(rep)}/100</div>
-          <div class="tag">${rankName(rank)}</div>
-        </div>
+        <div class="bar mini"><div class="barFill" style="width:${rep}%"></div></div>
       `;
-      wrap.appendChild(head);
-
-      const bar = document.createElement("div");
-      bar.className = "bar";
-      const fill = document.createElement("div");
-      fill.className = "barFill";
-      fill.style.width = `${rep}%`;
-      bar.appendChild(fill);
-      wrap.appendChild(bar);
-
-      // CivCrafter: frequent REP milestones (every 10)
-      const m10 = repMilestone10(rep);
-      const nextMilestone = Math.min(100, (m10 + 1) * 10);
-      const microNow = 1 + (m10 * 0.006);
-      const microNext = 1 + (Math.min(10, m10 + 1) * 0.006);
-      const microDelta = Math.max(0, (microNext - microNow) * 100);
-      const ms = document.createElement("div");
-      ms.style.fontFamily = "var(--sans)";
-      ms.style.color = "var(--muted)";
-      ms.style.fontSize = "0.78rem";
-      ms.style.display = "flex";
-      ms.style.justifyContent = "space-between";
-      ms.style.gap = "10px";
-      ms.style.flexWrap = "wrap";
-      ms.innerHTML = `
-        <span>Milestone: ${m10}/10 · Micro bonus: +${Math.round((microNow-1)*1000)/10}%</span>
-        <span>${rep < 100 ? `Next: REP ${nextMilestone} (+${Math.round(microDelta*10)/10}%)` : `Maxed`}</span>
-      `;
-      wrap.appendChild(ms);
-
-      
+      card.appendChild(head);
 
       const donateTxt = Object.entries(f.donate)
         .filter(([k]) => k !== "repGain")
@@ -1782,44 +1943,63 @@ function addRep(id, amount){
       const canStart = (!contractActive() && !contractReady() && S.idle >= 1);
       const busy = (contractActive() || contractReady());
 
-      const meta = document.createElement("div");
-      meta.className = "factionMeta";
-      meta.innerHTML = `
-        <div style="font-family:var(--sans); color:var(--muted); font-size:0.85rem; line-height:1.25;">
-          Donate: <span class="tag">${donateTxt}</span> <span class="tag">+${f.donate.repGain} REP</span><br/>
-          Contracts (use 1 idle settler): 
-          <span class="tag">Quick · ${fmtTime(quick.dur)} · ${rewardText(quick.reward)} · +${quick.repGain} REP</span>
-          <span class="tag">Deep · ${fmtTime(deep.dur)} · ${rewardText(deep.reward)} · +${deep.repGain} REP</span>
+      const streakActive = (S.factions.streakId === id) ? (S.factions.streak||0) : 0;
+      const streakMult = 1 + Math.max(0, streakActive-1) * 0.05;
+
+      const inline = document.createElement("div");
+      inline.className = "fInline";
+      inline.innerHTML = `
+        <div style="color:var(--muted); font-size:0.9rem; line-height:1.25; margin-bottom:10px;">
+          <span class="tag">REP ${Math.round(rep)}/100</span>
+          <span class="tag">${f.tag}</span>
+          <span class="tag">Streak ${streakActive}/5</span>
+          <span class="tag">Loot x${fmt(streakMult)}</span>
+          <span class="tag">${cdLeft>0 ? `Sponsor swap locked${cdTxt}` : `Sponsor swap ready`}</span>
+          <div style="margin-top:8px;">${f.desc}</div>
         </div>
-        <div class="fActions">
-          ${locked
-            ? `<button class="fbtn fbtnPrimary" disabled>ALLY</button>`
-            : (isActive
-                ? `<button class="fbtn fbtnDanger" data-fact-act="leave" data-fact-id="${id}">BREAK ALLIANCE</button>`
-                : `<button class="fbtn fbtnPrimary" data-fact-act="ally" data-fact-id="${id}">ALLY</button>`)}
-          <div class="actionRow">
-            <button class="fbtn fbtnSecondary" data-fact-act="donate" data-fact-id="${id}" ${locked ? "disabled" : ""}>DONATE</button>
-            <button class="fbtn fbtnSecondary" data-fact-act="opq" data-fact-id="${id}" ${(locked || !canStart) ? "disabled" : ""}>QUICK</button>
-            <button class="fbtn fbtnSecondary" data-fact-act="opd" data-fact-id="${id}" ${(locked || !canStart || rep<20) ? "disabled" : ""}>${rep>=20 ? "DEEP" : "DEEP (REP 20+)"}</button>
+
+        <div class="fActions2">
+          <button class="fbtn2 ${isSponsor ? "danger" : "primary"}" data-fact-act="${isSponsor ? "leave" : "ally"}" data-fact-id="${id}" ${(!isSponsor && rep<20) ? "disabled" : ""}>
+            ${isSponsor ? "End Sponsorship" : (rep<20 ? "Sponsor (REP 20+)" : "Become Sponsor")}
+          </button>
+
+          <div class="fSmall">
+            <div class="tag">Donate: ${donateTxt}</div>
+            <button class="fbtn2 secondary" data-fact-act="donate" data-fact-id="${id}">Donate (+${f.donate.repGain} REP)</button>
           </div>
-          ${locked ? `<div class="lockHint">LOCKED — Aligned with ${activeName}</div>` : ``}
+
+          <div class="fSmall">
+            <div class="tag">Quick Job · ${fmtTime(quick.dur)} · ${rewardText(quick.reward)} · +${quick.repGain} REP</div>
+            <button class="fbtn2 secondary" data-fact-act="opq" data-fact-id="${id}" ${(busy || !canStart) ? "disabled" : ""}>Run Quick</button>
+          </div>
+
+          <div class="fSmall">
+            <div class="tag">Deep Job · ${fmtTime(deep.dur)} · ${rewardText(deep.reward)} · +${deep.repGain} REP</div>
+            <button class="fbtn2 secondary" data-fact-act="opd" data-fact-id="${id}" ${(busy || !canStart || rep<20) ? "disabled" : ""}>${rep>=20 ? "Run Deep" : "Run Deep (REP 20+)"}</button>
+          </div>
+
+          ${sponsor && sponsor !== id ? `<div class="lockHint">You can still run jobs for anyone. Sponsor only affects passive bonuses.</div>` : ``}
         </div>
       `;
-      wrap.appendChild(meta);
 
       // Button states
-      const donateBtn = meta.querySelector('[data-fact-act="donate"]');
-      const allyBtn = meta.querySelector('[data-fact-act="ally"]');
-      if (donateBtn) donateBtn.disabled = locked || !canDonateFaction(id);
-      if (allyBtn) allyBtn.disabled = locked || isActive || rep < 20;
+      const donateBtn = inline.querySelector('[data-fact-act="donate"]');
+      if (donateBtn) donateBtn.disabled = !canDonateFaction(id);
+
+      const sponsorBtn = inline.querySelector('[data-fact-act="ally"]');
+      if (sponsorBtn && cdLeft>0) sponsorBtn.disabled = true;
 
       if (busy){
-        const opBtns = meta.querySelectorAll('[data-fact-act="opq"],[data-fact-act="opd"]');
+        const opBtns = inline.querySelectorAll('[data-fact-act="opq"],[data-fact-act="opd"]');
         opBtns.forEach(b => b.disabled = true);
       }
 
-      panel.appendChild(wrap);
+      card.appendChild(inline);
+      list.appendChild(card);
     }
+
+    panel.appendChild(list);
+
   }
 
   function renderStatsAndLog() {
@@ -2577,57 +2757,69 @@ function addRep(id, amount){
 });
 
   // Also listen on factionSummary so the Contract "Collect" button always works
-  $("factionSummary").addEventListener("click", (e) => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-    const act = btn.dataset.factAct;
-    if (!act) return;
-
-    // Collect may live in the summary banner, not the panel list
-    if (act === "collect") {
-      collectContract();
-      renderAll();
-      
-      queueSave();
-return;
-    }
-
-    const id = btn.dataset.factId;
-    if (!id) return;
-
-    const locked = (S.factions.active && S.factions.active !== id);
-    if (locked && (act === "donate" || act === "ally" || act === "opq" || act === "opd")) return;
-
-    if (act === "donate") donateToFaction(id);
-    if (act === "ally") setActiveFaction(id);
-    if (act === "leave") clearActiveFaction();
-    if (act === "opq") startContract(id, 0);
-    if (act === "opd") startContract(id, 1);
-    renderAll();
   
+// Also listen on factionSummary so the Contract "Collect" button always works
+$("factionSummary").addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  const act = btn.dataset.factAct;
+  if (!act) return;
+
+  if (act === "collect") {
+    collectContract();
+    renderAll();
     queueSave();
-});
+    return;
+  }
 
-  $("factionPanel").addEventListener("click", (e) => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-    const id = btn.dataset.factId;
-    const act = btn.dataset.factAct;
-    if (!id || !act) return;
+  const id = btn.dataset.factId;
+  if (!id) return;
 
-    const locked = (S.factions.active && S.factions.active !== id);
-    if (locked && (act === "donate" || act === "ally" || act === "opq" || act === "opd")) return;
-
-    if (act === "donate") donateToFaction(id);
-    if (act === "ally") setActiveFaction(id);
-    if (act === "leave") clearActiveFaction();
-    if (act === "opq") startContract(id, 0);
-    if (act === "opd") startContract(id, 1);
-    if (act === "collect") collectContract();
+  if (act === "pick") {
+    // Toggle expand/collapse when tapping the same faction again
+    S.factions.uiSelected = (S.factions.uiSelected === id) ? null : id;
     renderAll();
-  
-      queueSave();
+    queueSave();
+    return;
+  }
+  if (act === "donate") donateToFaction(id);
+  if (act === "ally") sponsorFaction(id);
+  if (act === "leave") clearActiveFaction();
+  if (act === "opq") startContract(id, 0);
+  if (act === "opd") startContract(id, 1);
+
+  renderAll();
+  queueSave();
 });
+
+  
+$("factionPanel").addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  const id = btn.dataset.factId;
+  const act = btn.dataset.factAct;
+  if (!id || !act) return;
+
+  if (act === "pick") {
+    // Toggle expand/collapse when tapping the same faction again
+    S.factions.uiSelected = (S.factions.uiSelected === id) ? null : id;
+    renderAll();
+    queueSave();
+    return;
+  }
+  if (act === "donate") donateToFaction(id);
+  if (act === "ally") sponsorFaction(id);
+  if (act === "leave") clearActiveFaction();
+  if (act === "opq") startContract(id, 0);
+  if (act === "opd") startContract(id, 1);
+  if (act === "collect") collectContract();
+
+  renderAll();
+  queueSave();
+});
+
+
+
 
   // ---------- Menu modal (save/export/import/reset/help) ----------
   const modal = $("modal");
