@@ -446,6 +446,81 @@
       opacity:.95;
     }
 
+  
+    /* ---------- Tap feedback ---------- */
+    .btn.tapFlash, .fbtn.tapFlash, .miniBtn.tapFlash, .closeBtn.tapFlash, .tab.tapFlash{
+      transform: translateY(1px) scale(.99);
+      filter: brightness(1.08);
+    }
+
+    /* Floating gain text */
+    .popGain{
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      font-family: var(--mono);
+      font-size: .88rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      opacity: 0;
+      transform: translate(-50%, 0) scale(.96);
+      animation: popFly 820ms ease-out forwards;
+    }
+    .popGain.good{ border-color: rgba(42,214,148,.35); }
+    .popGain.warn{ border-color: rgba(255,204,102,.35); }
+    .popGain.danger{ border-color: rgba(255,107,107,.35); }
+
+    @keyframes popFly{
+      0%   { opacity: 0; transform: translate(-50%, 10px) scale(.96); }
+      20%  { opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%, -36px) scale(1.02); }
+    }
+
+    /* Toasts */
+    #toastHost{
+      position: fixed;
+      left: 50%;
+      bottom: 76px;
+      transform: translateX(-50%);
+      width: min(520px, calc(100vw - 24px));
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast{
+      pointer-events: none;
+      font-family: var(--sans);
+      font-size: .92rem;
+      line-height: 1.25;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(15,18,22,.88);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      opacity: 0;
+      transform: translateY(8px);
+      animation: toastIn 180ms ease-out forwards, toastOut 220ms ease-in forwards;
+      animation-delay: 0ms, var(--toastLife, 1800ms);
+    }
+    .toast.good{ border-color: rgba(42,214,148,.35); }
+    .toast.warn{ border-color: rgba(255,204,102,.35); }
+    .toast.danger{ border-color: rgba(255,107,107,.35); }
+
+    @keyframes toastIn{
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes toastOut{
+      to { opacity: 0; transform: translateY(8px); }
+    }
+
   </style>
 </head>
 <body>
@@ -599,6 +674,8 @@
     <div class="modalBody" id="modalBody"></div>
   </dialog>
 
+  <div id="toastHost" aria-live="polite" aria-atomic="true"></div>
+
 <script>
 (() => {
   // ---------- Utilities ----------
@@ -614,6 +691,61 @@
     return (Math.round(x * 10) / 10) + units[u];
   };
   const now = () => Date.now();
+
+
+  // ---------- Micro feedback (toasts + floating text + haptics) ----------
+  function haptic(ms=10){
+    try{ if (navigator.vibrate) navigator.vibrate(ms); } catch {}
+  }
+
+  function toast(msg, tone=""){
+    const host = $("toastHost");
+    if (!host) return;
+    const t = document.createElement("div");
+    t.className = "toast" + (tone ? " " + tone : "");
+    t.style.setProperty("--toastLife", "1700ms");
+    t.textContent = msg;
+    host.appendChild(t);
+    // cleanup after animations
+    setTimeout(() => { try{ t.remove(); } catch {} }, 2100);
+  }
+
+  function popNearEl(el, text, tone="good"){
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const x = r.left + (r.width/2);
+    const y = r.top + Math.min(r.height*0.25, 18);
+    const p = document.createElement("div");
+    p.className = "popGain" + (tone ? " " + tone : "");
+    p.textContent = text;
+    p.style.left = x + "px";
+    p.style.top  = y + "px";
+    document.body.appendChild(p);
+    setTimeout(() => { try{ p.remove(); } catch {} }, 900);
+  }
+
+  function flashBtn(el){
+    if (!el) return;
+    el.classList.add("tapFlash");
+    setTimeout(() => el.classList.remove("tapFlash"), 120);
+  }
+
+  // Prefer pointerdown for mobile responsiveness; guard against double-fire (pointerdown + click)
+  function bindTap(el, handler){
+    let last = 0;
+    const fire = (ev) => {
+      const t = now();
+      if (t - last < 240) return;
+      last = t;
+      handler(ev);
+    };
+    el.addEventListener("pointerdown", (ev) => {
+      if (ev.pointerType === "mouse" && ev.button !== 0) return;
+      fire(ev);
+    }, { passive:true });
+    el.addEventListener("click", fire);
+  }
+
 
   // ---------- CivCrafter Momentum ----------
   function syncMomentum(){
@@ -1644,7 +1776,7 @@ function addRep(id, amount){
   }
 
   // ---------- Core actions ----------
-  function scavengeTap() {
+  function scavengeTap(srcEl=null){
     const baseScrap = 3 + Math.floor(S.scav*0.15);
     const baseFood = 1 + (Math.random() < 0.45 ? 1 : 0);
     const water = (Math.random() < 0.18) ? 1 : 0;
@@ -1664,52 +1796,57 @@ function addRep(id, amount){
     if (Math.random() < techChance) { S.tech += 1; log(`You found a pre‑war component. +1 TECH.`); }
 
     S.rad = clamp(S.rad + (Math.random() < 0.25 ? 0.2 : 0), 0, 100);
+    popNearEl(srcEl || $("btnScavenge"), `+${gotScrap} Scrap${gotFood?` · +${gotFood} Food`:``}${gotWater?` · +${gotWater} Water`:``}`, "good");
         log(`Scavenged the ruins: +${gotScrap} Scrap, +${gotFood} Food${gotWater?`, +${gotWater} Water`:``}.`);
     incQuest("scavenge", 1);
   }
 
-  function purify() {
+  function purify(srcEl=null){
     const p = purifyCost();
-    if (S.scrap < p.scrap) return;
+    if (S.scrap < p.scrap) { toast(`Need ${p.scrap} Scrap.`, "warn"); popNearEl(srcEl || $("btnPurify"), `Need ${p.scrap} Scrap`, "warn"); return; }
     S.scrap -= p.scrap;
     S.water += p.waterGain;
+    popNearEl(srcEl || $("btnPurify"), `+${p.waterGain} Water`, "good");
     log(`Ran the purifier: -${p.scrap} Scrap, +${p.waterGain} Water.`);
   }
 
-  function decontaminate() {
+  function decontaminate(srcEl=null){
     const d = deconCost();
-    if (S.water < d.water) { log(`Not enough Water to decontaminate.`, "warn"); return; }
-    if (S.rad <= 0.1) { log(`Radiation already low.`, "warn"); return; }
+    if (S.water < d.water) { toast(`Need ${d.water} Water.`, "warn"); log(`Not enough Water to decontaminate.`, "warn"); return; }
+    if (S.rad <= 0.1) { toast(`RAD already low.`, "warn"); log(`Radiation already low.`, "warn"); return; }
     S.water -= d.water;
     S.rad = clamp(S.rad - d.radDown, 0, 100);
+    popNearEl(srcEl || $("btnHealRad"), `RAD -${d.radDown}%`, "good");
     log(`Decontamination complete: -${d.water} Water, RAD -${d.radDown}%.`, "warn");
   }
 
-  function tradeScrap() {
+  function tradeScrap(srcEl=null){
     const tr = tradeCost();
-    if (S.scrap < tr.scrap) { log(`Not enough Scrap to trade.`, "warn"); return; }
+    if (S.scrap < tr.scrap) { toast(`Need ${tr.scrap} Scrap.`, "warn"); log(`Not enough Scrap to trade.`, "warn"); return; }
     S.scrap -= tr.scrap;
     S.caps += tr.capsGain;
+    popNearEl(srcEl || $("btnTrade"), `+${tr.capsGain} Caps`, "good");
     log(`Traded with a wandering merchant: -${tr.scrap} Scrap, +${tr.capsGain} Caps.`, "warn");
   }
 
 
-  function recruit() {
-    if (S.pop >= housingCap()) { log(`No room. Build more housing (Tin Shacks).`, "warn"); return; }
+  function recruit(srcEl=null){
+    if (S.pop >= housingCap()) { toast(`No housing. Build Tin Shacks.`, "warn"); log(`No room. Build more housing (Tin Shacks).`, "warn"); return; }
     const c = recruitCost();
     const mod = S.techs.radio ? 0.82 : 1;
     const f = Math.floor(c.food*mod);
     const w = Math.floor(c.water*mod);
-    if (S.food < f || S.water < w) return;
+    if (S.food < f || S.water < w) { toast(`Need Food ${f} + Water ${w}.`, "warn"); return; }
     S.food -= f; S.water -= w;
     S.pop += 1; S.idle += 1;
+    popNearEl(srcEl || $("btnRecruit"), `POP +1`, "good");
     log(`A drifter joined your outpost. POP +1.`);
     incQuest("recruit", 1);
   }
 
-  function raid() {
+  function raid(srcEl=null){
     const plan = raidPlan();
-    if (S.militia <= 0) { log(`No militia. Assign settlers to Militia first.`, "warn"); return; }
+    if (S.militia <= 0) { toast(`Assign Militia first.`, "warn"); log(`No militia. Assign settlers to Militia first.`, "warn"); return; }
     const raidFood = 3 + Math.floor(plan.threat);
     const raidWater = 2 + Math.floor(plan.threat*0.6);
     if (S.food < raidFood || S.water < raidWater) { log(`Not enough supplies to raid (need Food ${raidFood}, Water ${raidWater}).`, "warn"); return; }
@@ -1733,8 +1870,10 @@ function addRep(id, amount){
       const lossChance = clamp(0.25 + (plan.threat - defensePower())*0.10, 0.15, 0.75);
       if (Math.random() < lossChance && S.militia > 0) {
         S.militia -= 1; S.pop -= 1;
+        popNearEl(srcEl || $("btnRaid"), `Lost a fighter`, "danger");
         log(`Raid failed. You lost a fighter. POP -1, Militia -1.`, "danger");
       } else {
+        popNearEl(srcEl || $("btnRaid"), `Raid failed`, "danger");
         log(`Raid failed. You retreated with bruises and empty pockets.`, "danger");
       }
       S.rad = clamp(S.rad + 2.0, 0, 100);
@@ -1931,12 +2070,12 @@ function addRep(id, amount){
   }
 
   // ---------- Event wiring ----------
-  $("btnScavenge").addEventListener("click", () => { scavengeTap(); renderAll(); });
-  $("btnPurify").addEventListener("click", () => { purify(); renderAll(); });
-  $("btnRecruit").addEventListener("click", () => { recruit(); renderAll(); });
-  $("btnRaid").addEventListener("click", () => { raid(); renderAll(); });
-  $("btnHealRad").addEventListener("click", () => { decontaminate(); renderAll(); });
-  $("btnTrade").addEventListener("click", () => { tradeScrap(); renderAll(); });
+  bindTap($("btnScavenge"), (e) => { flashBtn(e.currentTarget); haptic(8); scavengeTap(e.currentTarget); renderAll(); });
+  bindTap($("btnPurify"), (e) => { flashBtn(e.currentTarget); haptic(8); purify(e.currentTarget); renderAll(); });
+  bindTap($("btnRecruit"), (e) => { flashBtn(e.currentTarget); haptic(8); recruit(e.currentTarget); renderAll(); });
+  bindTap($("btnRaid"), (e) => { flashBtn(e.currentTarget); haptic(12); raid(e.currentTarget); renderAll(); });
+  bindTap($("btnHealRad"), (e) => { flashBtn(e.currentTarget); haptic(8); decontaminate(e.currentTarget); renderAll(); });
+  bindTap($("btnTrade"), (e) => { flashBtn(e.currentTarget); haptic(8); tradeScrap(e.currentTarget); renderAll(); });
 
   $("workerPanel").addEventListener("click", (e) => {
     const btn = e.target.closest("button");
