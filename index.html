@@ -1966,6 +1966,34 @@ function addRep(id, amount){
     renderAll();
   });
 
+  // Also listen on factionSummary so the Contract "Collect" button always works
+  $("factionSummary").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    const act = btn.dataset.factAct;
+    if (!act) return;
+
+    // Collect may live in the summary banner, not the panel list
+    if (act === "collect") {
+      collectContract();
+      renderAll();
+      return;
+    }
+
+    const id = btn.dataset.factId;
+    if (!id) return;
+
+    const locked = (S.factions.active && S.factions.active !== id);
+    if (locked && (act === "donate" || act === "ally" || act === "opq" || act === "opd")) return;
+
+    if (act === "donate") donateToFaction(id);
+    if (act === "ally") setActiveFaction(id);
+    if (act === "leave") clearActiveFaction();
+    if (act === "opq") startContract(id, 0);
+    if (act === "opd") startContract(id, 1);
+    renderAll();
+  });
+
   $("factionPanel").addEventListener("click", (e) => {
     const btn = e.target.closest("button");
     if (!btn) return;
