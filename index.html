@@ -230,16 +230,27 @@
       background: linear-gradient(180deg, rgba(11,15,12,.0), rgba(11,15,12,.92) 40%, rgba(11,15,12,.98));
       border-top:1px solid rgba(31,58,42,.75);
       display:flex;
+      flex-wrap:nowrap;
+      overflow-x:auto;
+      overflow-y:hidden;
+      justify-content:flex-start;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
       gap:10px;
       justify-content:center;
       z-index:12;
       backdrop-filter: blur(6px);
     }
+    .tabbar::-webkit-scrollbar{ display:none; }
+    .tabbar{ scrollbar-width:none; }
+
     .tab{
       border:1px solid rgba(31,58,42,.85);
       background: linear-gradient(180deg, rgba(16,26,20,.9), rgba(13,21,17,.9));
       border-radius:16px;
       padding:12px 12px;
+      flex: 0 0 auto;
+      white-space: nowrap;
       font-family:var(--mono);
       color:var(--text);
       cursor:pointer;
