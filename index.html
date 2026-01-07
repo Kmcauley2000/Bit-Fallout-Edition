@@ -174,53 +174,13 @@
       font-family:var(--sans);
       line-height:1.15;
       text-align:right;
-      white-space:normal;
-      max-width:44%;
+      white-space:nowrap;
     }
     .btn .left{ display:flex; flex-direction:column; gap:4px; }
     .btn .name{ font-size:0.95rem; color:var(--accent); }
     .btn .desc{ font-family:var(--sans); font-size:0.85rem; line-height:1.25; color:var(--text); opacity:.92; }
 
     .rows{ display:flex; flex-direction:column; gap:10px; }
-
-    .sectionTitle{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding: 10px 2px 2px;
-      font-family:var(--mono);
-      font-size:0.72rem;
-      letter-spacing:.7px;
-      color: var(--muted);
-      text-transform:uppercase;
-      opacity:.95;
-    }
-    .sectionTitle .tag{ font-size:0.68rem; padding:3px 9px; }
-
-    /* Lightweight section headers inside panels */
-    .section{
-      padding: 10px 14px;
-      border-radius:16px;
-      border:1px solid rgba(31,58,42,55);
-      background: linear-gradient(180deg, rgba(9,14,11,70), rgba(7,11,9,70));
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-    .section .t{
-      font-family:var(--mono);
-      color:var(--accent);
-      font-size:0.85rem;
-      letter-spacing:.35px;
-    }
-    .section .s{
-      font-family:var(--sans);
-      color:var(--muted);
-      font-size:0.8rem;
-      opacity:.95;
-    }
     .row{
       display:flex;
       justify-content:space-between;
@@ -431,38 +391,6 @@
       touch-action: manipulation;
       min-height:44px;
       min-width:44px;
-    }
-
-    /* Large, thumb-friendly +/- buttons (used for unit steppers) */
-    .stepBtn{
-      min-width:54px;
-      min-height:54px;
-      padding:0;
-      border-radius:16px;
-      font-size:1.05rem;
-      line-height:1;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      user-select:none;
-      -webkit-user-select:none;
-      transition: transform .08s ease, filter .18s ease, border-color .18s ease;
-    }
-    .stepBtn:active{ transform: translateY(1px) scale(.98); }
-
-    /* Subtle transitions for CivCrafter-style panels */
-    .animIn{ animation: animIn .18s ease-out both; }
-    @keyframes animIn{
-      from{ opacity:0; transform: translateY(6px); }
-      to{ opacity:1; transform: translateY(0); }
-    }
-
-    dialog[open]{
-      animation: modalIn .18s ease-out both;
-    }
-    @keyframes modalIn{
-      from{ opacity:0; transform: translateY(10px) scale(.985); }
-      to{ opacity:1; transform: translateY(0) scale(1); }
     }
     .kbd{
       font-family:var(--mono);
@@ -738,30 +666,6 @@
       filter: brightness(1.08);
     }
 
-    /* Tap overdrive: button goes "on fire" after a combo */
-    .btn.onFire{
-      border-color: rgba(255, 184, 77, .75) !important;
-      box-shadow: 0 0 0 1px rgba(255,184,77,.25), 0 10px 30px rgba(255,120,40,.12);
-      filter: brightness(1.12) saturate(1.05);
-      position: relative;
-      overflow: hidden;
-    }
-    .btn.onFire::after{
-      content: "";
-      position:absolute;
-      inset:-40% -20% auto -20%;
-      height: 120%;
-      background: radial-gradient(circle at 50% 85%, rgba(255,184,77,.25), rgba(255,120,40,.10), rgba(0,0,0,0) 70%);
-      animation: fireWobble 750ms ease-in-out infinite;
-      pointer-events:none;
-      mix-blend-mode: screen;
-    }
-    @keyframes fireWobble{
-      0%{ transform: translateY(0) scale(1.0) rotate(-1deg); opacity:.75; }
-      50%{ transform: translateY(-6px) scale(1.03) rotate(1deg); opacity:.95; }
-      100%{ transform: translateY(0) scale(1.0) rotate(-1deg); opacity:.75; }
-    }
-
     /* Floating gain text */
     .popGain{
       position: fixed;
@@ -849,58 +753,6 @@
       transition: width .25s ease;
     }
     .miniHint{ color: var(--muted); font-family: var(--sans); font-size: .82rem; line-height:1.3; }
-
-    /* --- Battle (CivCrafter-style) --- */
-    .bSectionTitle{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      margin: 2px 0 8px;
-      font-family: var(--mono);
-      color: var(--muted);
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      font-size: .72rem;
-    }
-    .bPills{ display:flex; flex-wrap:wrap; gap:8px; }
-    .bPills .chip{ font-size:.74rem; }
-    .bScroll{
-      display:flex; gap:10px;
-      overflow-x:auto;
-      padding-bottom:4px;
-      -webkit-overflow-scrolling: touch;
-      scroll-snap-type:x mandatory;
-    }
-    .bScroll > button{ scroll-snap-align:start; }
-    .bPathBtn{
-      min-width: 220px;
-      border-radius: 16px;
-      padding: 12px 12px;
-    }
-    .bPathBtn .name{ font-size:.92rem; }
-    .bTierBtn{
-      border-radius: 16px;
-      padding: 12px 12px;
-    }
-    .bTierTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
-    .bTierBadge{
-      font-family: var(--mono);
-      font-weight: 900;
-      letter-spacing: .08em;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border:1px solid rgba(31,58,42,.85);
-      background: rgba(0,0,0,.20);
-      color: var(--accent);
-      white-space:nowrap;
-    }
-    .bTierMeta{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
-    .bTierMeta .chip{ padding:6px 10px; }
-    .bDeployGrid{
-      display:flex; flex-direction:column; gap:10px;
-    }
-    .bStepper{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    .bStepper .left{ min-width:0; }
-    .bStepper .right{ display:flex; gap:10px; align-items:center; }
-    .bStepper .count{ min-width:64px; text-align:center; }
 
     /* --- Battle Paths: clearer stat chips + sim overlay --- */
     .statLine{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; }
@@ -1014,204 +866,10 @@
     .fInline .fbtn2{ width:100%; }
 
 
-
-/* ===================== UI Overhaul Pass (Seamless + Cleaner) ===================== */
-:root{
-  --radius-xl: 18px;
-  --radius-lg: 14px;
-  --radius-md: 12px;
-  --radius-sm: 10px;
-  --shadow-soft: 0 10px 30px rgba(0,0,0,.28);
-  --shadow-card: 0 10px 22px rgba(0,0,0,.22);
-  --stroke: rgba(255,255,255,.08);
-  --stroke2: rgba(255,255,255,.12);
-  --panel: rgba(20,22,28,.78);
-  --panel2: rgba(26,30,38,.82);
-  --panel3: rgba(34,40,52,.86);
-}
-
-body{
-  letter-spacing: .1px;
-}
-
-#app{
-  max-width: 980px;
-  margin: 0 auto;
-}
-
-.screen{
-  animation: screenIn .14s ease-out;
-}
-@keyframes screenIn{
-  from{ transform: translateY(6px); opacity: .0; }
-  to{ transform: translateY(0); opacity: 1; }
-}
-
-/* Sections: unify spacing */
-.section{
-  background: var(--panel);
-  border: 1px solid var(--stroke);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-card);
-  padding: 14px;
-  margin: 12px 0;
-  backdrop-filter: blur(8px);
-}
-.sectionHeader{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  padding: 2px 0 10px 0;
-}
-.sectionTitle{
-  font-family: var(--mono);
-  font-size: .92rem;
-  color: var(--text);
-  opacity: .92;
-  letter-spacing: .4px;
-  text-transform: uppercase;
-}
-.sectionHint{
-  font-family: var(--sans);
-  font-size: .82rem;
-  color: var(--muted);
-}
-
-/* Buttons */
-button, .btn, .fbtn2, .miniBtn, .tab{
-  border-radius: var(--radius-lg) !important;
-}
-.btn, .fbtn2{
-  border: 1px solid var(--stroke2);
-  box-shadow: 0 8px 18px rgba(0,0,0,.18);
-  transition: transform .08s ease, filter .08s ease, background .12s ease;
-}
-.btn:active, .fbtn2:active, .miniBtn:active{
-  transform: translateY(1px) scale(.99);
-}
-.btn:hover, .fbtn2:hover, .miniBtn:hover{
-  filter: brightness(1.04);
-}
-
-.miniBtn{
-  border: 1px solid var(--stroke2);
-  background: rgba(255,255,255,.06);
-  padding: 8px 10px;
-}
-
-/* Tabs bar */
-.tabs{
-  background: rgba(12,14,18,.55);
-  border: 1px solid var(--stroke);
-  border-radius: var(--radius-xl);
-  padding: 8px;
-  gap: 8px;
-  backdrop-filter: blur(10px);
-}
-.tab{
-  border: 1px solid transparent;
-  background: transparent;
-}
-.tab.on{
-  background: rgba(255,255,255,.08);
-  border-color: var(--stroke2);
-  box-shadow: 0 6px 16px rgba(0,0,0,.18);
-}
-
-/* Pills */
-.pillBar{
-  gap: 8px;
-}
-.pill{
-  border: 1px solid var(--stroke);
-  border-radius: 999px;
-  background: rgba(255,255,255,.05);
-  padding: 7px 10px;
-  box-shadow: 0 6px 16px rgba(0,0,0,.14);
-}
-
-/* Rows */
-.row{
-  border: 1px solid transparent;
-  border-radius: var(--radius-lg);
-  padding: 10px 12px;
-}
-.row:hover{
-  background: rgba(255,255,255,.03);
-  border-color: rgba(255,255,255,.06);
-}
-.row .label{
-  font-family: var(--mono);
-  letter-spacing: .4px;
-}
-
-/* Cards (factions) */
-.fCard{
-  border: 1px solid var(--stroke);
-  background: var(--panel2);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
-}
-.fPick{
-  border: 0 !important;
-}
-.fInline{
-  background: rgba(0,0,0,.12);
-  border-top: 1px solid rgba(255,255,255,.06);
-}
-.facDesc{
-  color: var(--muted);
-}
-
-/* Modal polish */
-#modalBackdrop{
-  backdrop-filter: blur(8px);
-}
-#modal{
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--stroke2);
-  background: var(--panel3);
-  box-shadow: var(--shadow-soft);
-}
-#modal h3{
-  letter-spacing: .2px;
-}
-.divider{
-  height: 1px;
-  background: rgba(255,255,255,.08);
-  margin: 10px 0;
-}
-
-/* Battle sim / outcome */
-.statChips{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  align-items:center;
-}
-.chip{
-  display:inline-flex;
-  gap:6px;
-  align-items:center;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--stroke);
-  background: rgba(255,255,255,.05);
-  font-family: var(--mono);
-  font-size: .82rem;
-}
-.chip b{ font-family: var(--mono); }
-
-/* Reduce visual noise in long lists */
-.listTight .row{ padding: 9px 12px; }
-.listTight .row:hover{ background: rgba(255,255,255,.025); }
-
-/* Tap button: clearer state */
-#tapBtn.fire{
-  box-shadow: 0 0 0 1px rgba(255,120,20,.25), 0 14px 26px rgba(255,120,20,.14);
-}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);font-size:12px}
+.stepBtn{min-width:44px;min-height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:inherit;font-weight:800;font-size:20px;line-height:1}
+.stepBtn:active{transform:translateY(1px)}
+.card.mini{padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}
 </style>
 </head>
 <body>
@@ -1221,10 +879,7 @@ button, .btn, .fbtn2, .miniBtn, .tab{
         <h1>WASTELAND OUTPOST</h1>
         <p class="subtitle">A Fallout‑inspired idle settlement builder (original).</p>
       </div>
-      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
-        <button class="closeBtn" id="btnPillsToggle" title="Toggle advanced resources">More</button>
-        <div class="pillbar" id="topPills"></div>
-      </div>
+      <div class="pillbar" id="topPills"></div>
     </div>
   </header>
 
@@ -1300,45 +955,19 @@ button, .btn, .fbtn2, .miniBtn, .tab{
     </section>
 
     
-    <!-- BATTLE -->
+        <!-- BATTLE -->
     <section class="screen" id="screen-battle">
       <div class="ad-slot native" id="adNativeBattle" data-ad-slot="native-battle"></div>
       <div class="card">
-        <div class="cardHeader"><h2>Battle</h2><span class="tag">Campaign Paths</span></div>
-        <div class="cardBody">
-          <div class="rows" id="battleStats"></div>
-
-          <div class="divider"></div>
-
-          <div class="rows" id="battlePathSelect"></div>
-
-          <div class="divider"></div>
-
-          <div class="rows" id="battleTierList"></div>
-
-          <div class="divider"></div>
-
-          <div class="rows" id="battleDeploy"></div>
-
-          <div class="divider"></div>
-
-          <button class="btn" id="btnLaunchMission" disabled>
-            <div class="left">
-              <div class="name">Launch Mission</div>
-              <div class="desc" id="missionDesc">Choose a path and mission tier</div>
-            </div>
-            <small id="missionHint"></small>
-          </button>
-
-          <div class="divider"></div>
-
-          <div class="rows" id="battleReport"></div>
+        <div class="cardHeader">
+          <h2>Battle</h2>
+          <span class="tag" id="battleHeaderTag">Locked</span>
         </div>
+        <div class="cardBody" id="battlePanel"></div>
       </div>
     </section>
 
-
-    <!-- TECH -->
+<!-- TECH -->
     <section class="screen" id="screen-tech">
       <div class="card">
         <div class="cardHeader"><h2>Tech</h2><span class="tag">Upgrades</span></div>
@@ -1347,6 +976,7 @@ button, .btn, .fbtn2, .miniBtn, .tab{
         </div>
       </div>
     </section>
+
 
     <!-- FACTIONS -->
     <section class="screen" id="screen-factions">
@@ -1380,8 +1010,8 @@ button, .btn, .fbtn2, .miniBtn, .tab{
   <nav class="tabbar" aria-label="Menus">
     <button class="tab active" data-screen="clicker"><span class="dot"></span>Resources</button>
     <button class="tab" data-screen="build"><span class="dot"></span>Build</button>
+<button class="tab" data-screen="tech"><span class="dot"></span>Tech</button>
     <button class="tab" data-screen="battle"><span class="dot"></span>Battle</button>
-    <button class="tab" data-screen="tech"><span class="dot"></span>Tech</button>
     <button class="tab" data-screen="factions"><span class="dot"></span>Factions</button>
     <button class="tab" data-screen="log"><span class="dot"></span>Log</button>
     <button class="tab" id="btnMenu"><span class="dot"></span>Menu</button>
@@ -1434,12 +1064,6 @@ button, .btn, .fbtn2, .miniBtn, .tab{
     `;
   }
   const now = () => Date.now();
-
-  // ---------- UI prefs ----------
-  function ensureUI(){
-    if (!S.ui) S.ui = {};
-    if (S.ui.pillsExpanded === undefined) S.ui.pillsExpanded = false;
-  }
 
 
   // ---------- Micro feedback (toasts + floating text + haptics) ----------
@@ -1565,11 +1189,6 @@ button, .btn, .fbtn2, .miniBtn, .tab{
     farmers: 0,
     purifiers: 0,
     militia: 0,
-
-    // Tap combo / overdrive (makes active play feel spicy)
-    tapCombo: 0,
-    tapComboLast: 0,
-    tapFireUntil: 0,
     // Expansion roles (initialize to 0)
     engineers: 0,
     medics: 0,
@@ -1591,6 +1210,16 @@ button, .btn, .fbtn2, .miniBtn, .tab{
     techs: { workshop:false, radio:false, medbay:false, caravan:false },
     day: 1,
     raidsWon: 0,
+
+
+    // Combat / Raids
+    combatUnlocked: false,
+    trophies: 0,
+    raidMarks: 0,
+    combatUnits: { riflemen:0, snipers:0, power:0, mutants:0, robots:0, mercs:0 },
+    raidHistory: [],
+    raidTarget: null,
+    lastRaidAt: 0,
 
     // Expansion resources
     medData: 0,
@@ -1671,8 +1300,6 @@ button, .btn, .fbtn2, .miniBtn, .tab{
 
   function defensePower(){
     return availableMilitia() * 1.0 + S.turret * 2.2 + (S.techs.medbay ? 0.4 : 0);}
-
-  function defenseScore(){ return defensePower(); }
   function productionPerSec() {
     // global multipliers from Engineers
     const engMult = 1 + (S.engineers || 0) * 0.02;
@@ -1893,10 +1520,14 @@ function ensureExpansion(){
     breakthroughs: 0,
     strain: 0,
 
-    // Tap combo / overdrive
-    tapCombo: 0,
-    tapComboLast: 0,
-    tapFireUntil: 0,
+    // Combat / Raids (Fallout automated battles)
+    combatUnlocked: false,
+    trophies: 0,
+    raidMarks: 0,
+    combatUnits: { riflemen:0, snipers:0, power:0, mutants:0, robots:0, mercs:0 },
+    raidHistory: [],
+    raidTarget: null,
+    lastRaidAt: 0,
   };
   for (const k of Object.keys(defaults)) {
     if (S[k] === undefined || S[k] === null) {
@@ -2508,24 +2139,495 @@ function clearActiveFaction(){
     const q = S.quests;
     if (!q.target) return "No quest";
     return q.done ? "Complete — claimed" : `${q.target.label}: ${q.progress}/${q.target.goal}`;
+  }// ---------- Combat / Raid system (automated, Fallout-themed) ----------
+const COMBAT_UNITS = {
+  riflemen: { name:"Wasteland Riflemen", tag:"Balanced", atk:3, def:3, hp:8, cost:{ scrap:25, food:5, caps:10 } },
+  snipers:  { name:"Snipers", tag:"Ranged", atk:5, def:2, hp:6, cost:{ scrap:30, food:4, caps:18 } },
+  power:    { name:"Power Armor Troopers", tag:"Heavy", atk:9, def:8, hp:18, cost:{ scrap:60, tech:2, caps:40 } },
+  mutants:  { name:"Super Mutants", tag:"Brute", atk:10, def:5, hp:22, cost:{ food:18, caps:25 } },
+  robots:   { name:"Sentry Bots", tag:"Robot", atk:14, def:10, hp:26, cost:{ scrap:90, tech:4, caps:65 } },
+  mercs:    { name:"Mercenaries", tag:"Skirmish", atk:4, def:4, hp:10, cost:{ caps:30, food:6 } },
+};
+
+// Matchmaking & progression tiers (Fallout-themed)
+const RAID_TIERS = [
+  { name:"Abandoned Camp", pop:0, basePower:8,  steal:{ scrap:[8,18], food:[3,8], water:[2,6], caps:[2,8] }, marks:1 },
+  { name:"Scavenger Outpost", pop:20, basePower:20, steal:{ scrap:[15,35], food:[6,14], water:[5,12], caps:[8,18] }, marks:1 },
+  { name:"Survivor Settlement", pop:60, basePower:45, steal:{ scrap:[30,70], food:[10,22], water:[10,22], caps:[15,35], tech:[0,1] }, marks:2 },
+  { name:"Fortified Town", pop:200, basePower:90, steal:{ scrap:[55,120], food:[18,40], water:[18,40], caps:[30,70], tech:[0,2] }, marks:3 },
+  { name:"Trade Hub", pop:2000, basePower:180, steal:{ scrap:[110,240], food:[35,80], water:[35,80], caps:[65,140], tech:[1,3] }, marks:4 },
+  { name:"Wasteland City", pop:5000, basePower:260, steal:{ scrap:[160,340], food:[55,120], water:[55,120], caps:[90,190], tech:[1,4] }, marks:5 },
+  { name:"Faction Stronghold", pop:10000, basePower:360, steal:{ scrap:[220,460], food:[75,160], water:[75,160], caps:[120,240], tech:[2,5] }, marks:6 },
+  { name:"Regional Power Zone", pop:50000, basePower:520, steal:{ scrap:[320,700], food:[110,240], water:[110,240], caps:[170,360], tech:[3,7] }, marks:7 },
+  { name:"State-Level Territory", pop:100000, basePower:680, steal:{ scrap:[420,900], food:[150,320], water:[150,320], caps:[230,480], tech:[4,8] }, marks:8 },
+  { name:"Nationwide Faction", pop:150000, basePower:820, steal:{ scrap:[520,1100], food:[190,380], water:[190,380], caps:[280,560], tech:[5,10] }, marks:9 },
+  { name:"Wasteland Dominion", pop:200000, basePower:980, steal:{ scrap:[640,1350], food:[220,450], water:[220,450], caps:[340,680], tech:[6,12] }, marks:10 },
+  { name:"Post-War Empire", pop:500000, basePower:1400, steal:{ scrap:[900,2000], food:[320,700], water:[320,700], caps:[480,980], tech:[8,16] }, marks:12 },
+];
+
+const BATTLE_UNLOCK_COST = { scrap:120, tech:4, caps:80 };
+
+function combatUnlocked(){ return !!S.combatUnlocked; }
+function hasAnyCombatUnit(){
+  ensureExpansion();
+  return Object.values(S.combatUnits || {}).reduce((a,b)=>a+(b||0),0) > 0;
+}
+
+function unitCostStr(cost){
+  const parts = [];
+  for (const k of ["scrap","food","water","tech","caps"]){
+    if (cost[k]) parts.push(`${k.toUpperCase()} ${fmt(cost[k])}`);
   }
+  return parts.join(" · ");
+}
+function canAfford(cost){
+  for (const [k,v] of Object.entries(cost)){
+    if ((S[k]||0) < v) return false;
+  }
+  return true;
+}
+function payCost(cost){
+  for (const [k,v] of Object.entries(cost)){
+    S[k] -= v;
+  }
+}
+
+function totalArmyStats(){
+  const u = S.combatUnits || {};
+  let atk=0, def=0, hp=0;
+  for (const [id,qty] of Object.entries(u)){
+    const q = qty||0;
+    const d = COMBAT_UNITS[id];
+    if (!d || q<=0) continue;
+    atk += d.atk*q;
+    def += d.def*q;
+    hp  += d.hp*q;
+  }
+  const hasFront = (u.riflemen||0) + (u.power||0) + (u.mutants||0) + (u.mercs||0) > 0;
+  const hasRanged = (u.snipers||0) > 0;
+  let mult = 1.0;
+  if (hasFront && hasRanged) mult += 0.06;
+  if ((u.robots||0) > 0) mult += 0.04;
+  return { atk: Math.round(atk*mult), def: Math.round(def*mult), hp: Math.round(hp*mult), mult };
+}
+function totalArmyPower(){
+  const s = totalArmyStats();
+  return Math.round(s.atk*0.45 + s.def*0.35 + s.hp*0.20);
+}
+
+function playerTierIndex(){
+  const p = Math.max(0, S.pop || 0);
+  let idx = 0;
+  for (let i=0; i<RAID_TIERS.length; i++){
+    if (p >= RAID_TIERS[i].pop) idx = i;
+  }
+  return idx;
+}
+
+function rollRaidTarget(){
+  const pIdx = playerTierIndex();
+  const minIdx = Math.max(0, pIdx-1);
+  const maxIdx = Math.min(RAID_TIERS.length-1, pIdx+1);
+  const idx = randInt(minIdx, maxIdx+1);
+  const tier = RAID_TIERS[idx];
+  const variance = 0.90 + Math.random()*0.20;
+  const defPower = Math.round(tier.basePower * variance);
+
+  const nameBits = ["Red Rock","Dusty","Sunken","Rust","Molerat","Ghoul","Iron","Coyote","Barter","Badlands","Shady","Juniper","Blackwater"];
+  const settlementName = `${choice(nameBits)} ${tier.name}`;
+
+  S.raidTarget = { idx, name:settlementName, tierName:tier.name, defPower, pop:tier.pop, marks:tier.marks, steal:tier.steal };
+}
+
+function unlockCombat(){
+  if (S.combatUnlocked) return;
+  if (!canAfford(BATTLE_UNLOCK_COST)){
+    log(`Need ${unitCostStr(BATTLE_UNLOCK_COST)} to establish a Command Terminal.`, "warn");
+    return;
+  }
+  payCost(BATTLE_UNLOCK_COST);
+  S.combatUnlocked = true;
+  log("Command Terminal online. Raids unlocked.", "warn");
+  renderAll(); queueSave();
+}
+
+function recruitUnit(id, delta){
+  ensureExpansion();
+  const d = COMBAT_UNITS[id];
+  if (!d) return;
+  if (delta > 0){
+    if (!canAfford(d.cost)){
+      log(`Not enough resources to recruit ${d.name}.`, "warn");
+      return;
+    }
+    payCost(d.cost);
+    S.combatUnits[id] = (S.combatUnits[id]||0) + 1;
+  } else {
+    S.combatUnits[id] = Math.max(0, (S.combatUnits[id]||0) - 1);
+  }
+  renderAll(); queueSave();
+}
+
+function sampleSteal(range){
+  const lo = range[0], hi = range[1];
+  if (hi <= lo) return lo;
+  return randInt(lo, hi+1);
+}
+
+function formatLosses(losses){
+  const parts = [];
+  for (const [k,v] of Object.entries(losses)){
+    if (!v) continue;
+    parts.push(`${COMBAT_UNITS[k]?.name || k} -${v}`);
+  }
+  return parts.length ? parts.join(", ") : "None";
+}
+
+function addRaidHistory(entry){
+  S.raidHistory = S.raidHistory || [];
+  S.raidHistory.unshift(entry);
+  if (S.raidHistory.length > 12) S.raidHistory.length = 12;
+}
+
+function simulateRaid(){
+  if (!combatUnlocked()){
+    log("Combat is locked. Build a Command Terminal first.", "warn");
+    return;
+  }
+  if (!hasAnyCombatUnit()){
+    log("Recruit at least one combat unit to launch a raid.", "warn");
+    return;
+  }
+  if (!S.raidTarget) rollRaidTarget();
+
+  const nowT = now();
+  if ((nowT - (S.lastRaidAt||0)) < 1500) return; // anti spam
+  S.lastRaidAt = nowT;
+
+  const atkStats = totalArmyStats();
+  const atkPower = totalArmyPower();
+  const tgt = S.raidTarget;
+  const defPower = tgt.defPower;
+  const win = atkPower > defPower;
+
+  // small optional variance (tiny) to avoid ties feeling weird
+  const tiny = 0.98 + Math.random()*0.04;
+  const effectiveAtk = Math.round(atkPower * tiny);
+
+  const finalWin = effectiveAtk > defPower;
+
+  let marksGained = tgt.marks;
+  if (tgt.idx <= 1) marksGained = 1; // anti-farm rule
+
+  let loot = { scrap:0, food:0, water:0, tech:0, caps:0 };
+  let losses = {};
+
+  if (finalWin){
+    const closeness = clamp(defPower / Math.max(1, effectiveAtk), 0.0, 0.99);
+    const lossRate = 0.03 + closeness*0.10;
+    for (const k of Object.keys(COMBAT_UNITS)){
+      const q = S.combatUnits[k]||0;
+      if (!q) continue;
+      const die = Math.min(q, Math.max(0, Math.round(q*lossRate*(0.7+Math.random()*0.6))));
+      if (die>0){
+        S.combatUnits[k] -= die;
+        losses[k]=die;
+      }
+    }
+    // reward scales with tier + win margin
+    for (const [rk,range] of Object.entries(tgt.steal)){
+      const base = sampleSteal(range);
+      const bonus = 1 + Math.min(0.35, Math.max(0, (effectiveAtk - defPower) / Math.max(1, defPower)) * 0.25);
+      const amt = Math.round(base * bonus);
+      loot[rk] = (loot[rk]||0) + amt;
+      S[rk] = (S[rk]||0) + amt;
+    }
+
+    S.trophies = (S.trophies||0) + 1;
+    S.raidMarks = (S.raidMarks||0) + marksGained;
+    S.raidsWon = (S.raidsWon||0) + 1;
+
+    addRaidHistory({
+      t: nowT,
+      title: `Raid Victory: ${tgt.name}`,
+      result: "WIN",
+      atkPower: effectiveAtk,
+      defPower,
+      loot,
+      losses,
+      marks: marksGained,
+      trophies: 1,
+    });
+
+    log(`Raid SUCCESS — seized loot from ${tgt.name}. +${marksGained} Raid Marks.`, "warn");
+    rollRaidTarget(); // new opponent after win
+  } else {
+    const ratio = clamp(defPower / Math.max(1, effectiveAtk), 0.5, 3.0);
+    const lossRate = 0.20 + ratio*0.10;
+    for (const k of Object.keys(COMBAT_UNITS)){
+      const q = S.combatUnits[k]||0;
+      if (!q) continue;
+      const die = Math.min(q, Math.max(1, Math.round(q*lossRate*(0.8+Math.random()*0.5))));
+      S.combatUnits[k] -= die;
+      losses[k]=die;
+    }
+
+    addRaidHistory({
+      t: nowT,
+      title: `Raid Failed: ${tgt.name}`,
+      result: "LOSS",
+      atkPower: effectiveAtk,
+      defPower,
+      loot,
+      losses,
+      marks: 0,
+      trophies: 0,
+    });
+
+    log(`Raid FAILED — ${tgt.name} repelled your forces.`, "warn");
+    // target remains (lets player retry or reroll)
+  }
+
+  renderAll(); queueSave();
+}
+
+
+function renderBattle(){
+  ensureExpansion();
+  const panel = $("battlePanel");
+  if (!panel) return;
+
+  const alignedFaction = (S.factions && S.factions.aligned) ? S.factions.aligned : null;
+  const factionName = alignedFaction ? (FACTIONS[alignedFaction]?.name || "Faction") : "Independent";
+  const hdr = $("battleHeaderTag");
+  if (hdr){
+    hdr.textContent = combatUnlocked() ? factionName : "Locked";
+  }
+
+  const armyStats = totalArmyStats();
+  const armyPower = totalArmyPower();
+
+  // Simple risk label based on your power vs estimated enemy power
+  const riskChip = (enemyPower) => {
+    const ratio = armyPower / Math.max(1, enemyPower);
+    if (ratio >= 1.20) return `<span class="chip good">🟢 Favorable</span>`;
+    if (ratio >= 0.90) return `<span class="chip warn">🟠 Risky</span>`;
+    return `<span class="chip danger">🔴 Dangerous</span>`;
+  };
+
+  const headerRow = `
+    <div class="row">
+      <div class="label">Combat Status</div>
+      <div class="value" style="display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
+        <span class="chip">🏆 Trophies <b>${fmt(S.trophies||0)}</b></span>
+        <span class="chip">💀 Raid Marks <b>${fmt(S.raidMarks||0)}</b></span>
+        <span class="chip">⚔️ Strength <b>${fmt(armyPower)}</b></span>
+      </div>
+    </div>
+  `;
+
+  // Locked view (unlock + recruit)
+  if (!combatUnlocked()){
+    panel.innerHTML = `
+      ${headerRow}
+
+      <div class="divider"></div>
+
+      <div class="row">
+        <div style="min-width:0">
+          <div class="label">Locked</div>
+          <div class="value">Establish a <b>Command Terminal</b> and field at least <b>1 combat unit</b>.</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="label">Unlock Cost</div>
+          <div class="value"><span class="tag">${unitCostStr(BATTLE_UNLOCK_COST)}</span></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;align-items:center">
+          <button class="btn" data-bact="unlock" ${canAfford(BATTLE_UNLOCK_COST)? "" : "disabled"}>
+            <div class="left">
+              <div class="name">Establish Command Terminal</div>
+              <div class="desc">Unlock raids & battle targets</div>
+            </div>
+            <small>${canAfford(BATTLE_UNLOCK_COST) ? "UNLOCK" : "LOCKED"}</small>
+          </button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="row">
+        <div class="label">Your Army</div>
+        <div class="value">Recruit units now. Raids unlock after the terminal.</div>
+      </div>
+
+      <div class="rows" style="gap:10px; margin-top:8px">
+        ${Object.entries(COMBAT_UNITS).map(([id,d])=>{
+          const qty = (S.combatUnits?.[id]||0);
+          return `
+            <div class="row" style="align-items:flex-start">
+              <div style="min-width:0">
+                <div class="value" style="font-family:var(--mono); color:var(--accent)">${d.name} <span class="tag">${d.tag}</span></div>
+                <div class="label">${unitCostStr(d.cost)}</div>
+              </div>
+              <div class="value" style="display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
+                <span class="tag">x${qty}</span>
+                <button class="stepBtn" data-bact="dec" data-unit="${id}" ${qty>0?"":"disabled"} aria-label="Decrease ${d.name}">−</button>
+                <button class="stepBtn" data-bact="inc" data-unit="${id}" ${canAfford(d.cost)?"":"disabled"} aria-label="Increase ${d.name}">+</button>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+    return;
+  }
+
+  // Unlocked view
+  if (S.uiBattleShowHistory === undefined) S.uiBattleShowHistory = false;
+
+  // Stage 1: Army overview (always visible)
+  const armyList = `
+    <div class="row">
+      <div class="label">Your Forces</div>
+      <div class="value"><span class="tag">Composition matters</span></div>
+    </div>
+    <div class="rows" style="gap:10px; margin-top:8px">
+      ${Object.entries(COMBAT_UNITS).map(([id,d])=>{
+        const qty = (S.combatUnits?.[id]||0);
+        return `
+          <div class="row" style="align-items:flex-start">
+            <div style="min-width:0">
+              <div class="value" style="font-family:var(--mono); color:var(--accent)">${d.name}</div>
+              <div class="label">${d.tag} · ATK ${d.atk} · DEF ${d.def} · HP ${d.hp}</div>
+            </div>
+            <div class="value" style="display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
+              <span class="tag">x${qty}</span>
+              <button class="stepBtn" data-bact="dec" data-unit="${id}" ${qty>0?"":"disabled"} aria-label="Decrease ${d.name}">−</button>
+              <button class="stepBtn" data-bact="inc" data-unit="${id}" ${canAfford(d.cost)?"":"disabled"} aria-label="Increase ${d.name}">+</button>
+            </div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+
+  // Stage 2/3: Find target -> preview -> raid
+  const hasTarget = !!S.raidTarget;
+  const tgt = S.raidTarget;
+
+  let targetBlock = `
+    <div class="row">
+      <div class="label">Raid Target</div>
+      <div class="value">Matchmaking by population tier. Automated resolution.</div>
+    </div>
+  `;
+
+  if (!hasTarget){
+    targetBlock += `
+      <button class="btn" data-bact="find" ${hasAnyCombatUnit()? "" : "disabled"}>
+        <div class="left">
+          <div class="name">Find Raid Target</div>
+          <div class="desc">${hasAnyCombatUnit() ? "Roll a nearby settlement to attack" : "Recruit at least 1 unit to raid"}</div>
+        </div>
+        <small>${hasAnyCombatUnit() ? "SCAN" : "NO UNITS"}</small>
+      </button>
+      <div class="miniHint" style="margin-top:10px">
+        Tip: your <b>Strength</b> is based on unit totals + small composition bonuses.
+      </div>
+    `;
+  } else {
+    const marksShown = (tgt.idx<=1)?1:tgt.marks;
+    targetBlock += `
+      <div class="card mini" style="margin-top:10px">
+        <div class="row" style="margin:0">
+          <div style="min-width:0">
+            <div class="value" style="font-family:var(--mono); color:var(--accent)">${tgt.name}</div>
+            <div class="label">${tgt.tierName} · Pop ≥ ${fmt(tgt.pop)}</div>
+          </div>
+          <div class="value" style="display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
+            <span class="chip">Enemy ~${fmt(tgt.defPower)}</span>
+            ${riskChip(tgt.defPower)}
+            <span class="chip">💀 ${fmt(marksShown)} Marks</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="label">Preview</div>
+        <div class="value">
+          You: <b>${fmt(armyPower)}</b> vs Enemy: <b>~${fmt(tgt.defPower)}</b>
+          <span class="tag">Variance small</span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:10px; flex-wrap:wrap">
+        <button class="btn" data-bact="reroll">Find New Target</button>
+        <button class="btn" data-bact="raid" ${hasAnyCombatUnit()? "" : "disabled"}>
+          <div class="left">
+            <div class="name">RAID SETTLEMENT</div>
+            <div class="desc">Resolve instantly · Loot + Raid Marks</div>
+          </div>
+          <small>RAID</small>
+        </button>
+      </div>
+    `;
+  }
+
+  // Optional: history (secondary)
+  const hist = (S.raidHistory||[]).slice(0,6);
+  const historyBlock = `
+    <div class="divider"></div>
+    <button class="btn" data-bact="toggleHistory">
+      <div class="left">
+        <div class="name">Raid History</div>
+        <div class="desc">Recent results (losses & loot)</div>
+      </div>
+      <small>${S.uiBattleShowHistory ? "HIDE" : "SHOW"}</small>
+    </button>
+    ${S.uiBattleShowHistory ? `
+      <div class="rows" style="gap:10px; margin-top:10px">
+        ${hist.map(r=>{
+          const dt = new Date(r.t);
+          const time = dt.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+          const lootLine = Object.entries(r.loot||{}).filter(([k,v])=>v>0).map(([k,v])=>`${k.toUpperCase()} +${fmt(v)}`).join(" · ");
+          const lossesLine = formatLosses(r.losses||{});
+          return `
+            <div class="row" style="align-items:flex-start">
+              <div style="min-width:0">
+                <div class="value"><b>${r.result==="WIN" ? "✅" : "❌"} ${escapeHtml(r.title)}</b></div>
+                <div class="label">${time} · You ${fmt(r.atkPower)} vs Enemy ${fmt(r.defPower)}</div>
+                <div class="label">Losses: ${escapeHtml(lossesLine)}${lootLine?` · Loot: ${escapeHtml(lootLine)}`:""}</div>
+              </div>
+              <div class="value">
+                ${r.result==="WIN" ? `<span class="tag">+${fmt(r.marks)} Marks</span>` : `<span class="tag" style="border-color: rgba(255,107,107,.55); color: var(--danger);">Repelled</span>`}
+              </div>
+            </div>
+          `;
+        }).join("") || `<div class="row"><div class="label">No raids yet.</div><div class="value">Strike first when ready.</div></div>`}
+      </div>
+    ` : ``}
+  `;
+
+  panel.innerHTML = `
+    ${headerRow}
+    <div class="divider"></div>
+    ${armyList}
+    <div class="divider"></div>
+    ${targetBlock}
+    ${historyBlock}
+  `;
+}
+
+
 
 
   // ---------- UI: screen navigation ----------
-  const screens = ["clicker","build","battle","tech","factions","log"];
-  // Track the currently visible screen so tick() doesn't continuously rebuild hidden UIs.
-  // This fixes the "spazzing"/blinking on the Battle screen caused by full re-renders every 250ms.
-  const UI = {
-    screen: "clicker",
-    lastLightRender: 0,
-    battleSig: "",
-    battleRenderedAt: 0,
-    battleDirty: true,
-  };
+  const screens = ["clicker","build","tech","battle","factions","log"];
   function showScreen(name){
-    UI.screen = name;
-    if (name === "battle") UI.battleDirty = true;
-    for (const s of screens){
+for (const s of screens){
       const el = $("screen-" + s);
       if (el) el.classList.toggle("active", s === name);
     }
@@ -2540,30 +2642,13 @@ function clearActiveFaction(){
     btn.addEventListener("click", () => showScreen(btn.dataset.screen));
   });
 
-  // Top HUD: toggle advanced resource pills
-  const pillsBtn = $("btnPillsToggle");
-  if (pillsBtn){
-    pillsBtn.addEventListener("click", () => {
-      ensureUI();
-      S.ui.pillsExpanded = !S.ui.pillsExpanded;
-      pillsBtn.textContent = S.ui.pillsExpanded ? "Less" : "More";
-      renderTopPills();
-      queueSave();
-    });
-  }
-
   // ---------- UI builders ----------
   function renderTopPills() {
     const el = $("topPills");
     el.innerHTML = "";
     // ensure expansions are initialised
     ensureExpansion();
-    ensureUI();
-
-    const pillsBtn = $("btnPillsToggle");
-    if (pillsBtn) pillsBtn.textContent = S.ui.pillsExpanded ? "Less" : "More";
-
-    const basic = [
+    const pills = [
       ["SCRAP", S.scrap],
       ["FOOD", S.food],
       ["WATER", S.water],
@@ -2571,14 +2656,10 @@ function clearActiveFaction(){
       ["CAPS", S.caps],
       ["POP", `${S.pop}/${housingCap()}`],
       ["RAD", `${Math.round(S.rad)}%`],
-    ];
-    const advanced = [
       ["MED", S.medData],
       ["BRK", S.breakthroughs],
       ["STR", S.strain]
     ];
-
-    const pills = S.ui.pillsExpanded ? basic.concat(advanced) : basic;
     for (const [k,v] of pills) {
       const p = document.createElement("div");
       p.className = "pill";
@@ -2620,9 +2701,9 @@ function clearActiveFaction(){
           <div style="font-family:var(--sans); color:var(--muted); font-size:0.82rem; line-height:1.25;">${desc}</div>
         </div>
         <div style="display:flex; gap:10px; align-items:center;">
-          <button class="closeBtn stepBtn" data-act="minus" data-key="${key}" aria-label="Decrease ${title}">-</button>
+          <button class="closeBtn" data-act="minus" data-key="${key}" aria-label="Decrease ${title}">-</button>
           <span style="min-width:32px; text-align:center; font-family:var(--mono);">${S[key]}</span>
-          <button class="closeBtn stepBtn" data-act="plus" data-key="${key}" aria-label="Increase ${title}">+</button>
+          <button class="closeBtn" data-act="plus" data-key="${key}" aria-label="Increase ${title}">+</button>
         </div>
       `;
       panel.appendChild(wrap);
@@ -2714,10 +2795,7 @@ function clearActiveFaction(){
   }
 
   function costText(cost) {
-    const keyMap = { scrap:"SCRAP", food:"FOOD", water:"WATER", tech:"TECH", caps:"CAPS", medData:"MED", breakthroughs:"BRK" };
-    return Object.entries(cost)
-      .map(([k,v]) => `${(keyMap[k] || k.toUpperCase())} ${v}`)
-      .join(" · ");
+    return Object.entries(cost).map(([k,v]) => `${k.toUpperCase()} ${v}`).join("<br/>");
   }
 
   function renderBuildings() {
@@ -2726,13 +2804,6 @@ function clearActiveFaction(){
     panel.innerHTML = "";
     // ensure expansion fields are available
     ensureExpansion();
-
-    const addSection = (title, subtitle) => {
-      const s = document.createElement("div");
-      s.className = "section";
-      s.innerHTML = `<div class="t">${title}</div><div class="s">${subtitle}</div>`;
-      panel.appendChild(s);
-    };
 
     const canAfford = (cost) => Object.entries(cost).every(([k,v]) => S[k] >= v);
 
@@ -2764,7 +2835,6 @@ function clearActiveFaction(){
       panel.appendChild(btn);
     };
 
-    addSection("Core", "Housing & production");
     // Base buildings
     buyBtn("Tin Shack", "Adds housing for settlers.", "shack",
       { scrap: 18 + S.shack*10, caps: (S.shack < 2 ? 0 : (6 + S.shack*3)) },
@@ -2779,13 +2849,11 @@ function clearActiveFaction(){
       { scrap: 22 + S.purifier*12, tech: Math.floor(S.purifier*0.7) }
     );
 
-    addSection("Defense", "Reduce raid losses");
     buyBtn("Jury-Rigged Turret", "Big defense boost.", "turret",
       { scrap: 30 + S.turret*18, tech: 1 + Math.floor(S.turret*0.8), caps: 10 + S.turret*6 },
-      `Defense +2 (now ${fmt(defenseScore())})`
+      `Defense +2.2`
     );
 
-    addSection("Facilities", "Unlock advanced roles");
     // Expansion buildings
     // Workshop Annex: unlocked by Workshop tech
     const annexCost = { scrap: 30 + S.annex*24, tech: 6 + S.annex*2 };
@@ -2823,13 +2891,6 @@ function clearActiveFaction(){
     if (!panel) return;
     panel.innerHTML = "";
 
-    const addSection = (title, subtitle) => {
-      const s = document.createElement("div");
-      s.className = "section";
-      s.innerHTML = `<div class="t">${title}</div><div class="s">${subtitle}</div>`;
-      panel.appendChild(s);
-    };
-
     const techs = [
       { key: "workshop", name: "Workshop Bench", desc: "Scavengers trickle Tech; +housing bonus.", cost: { tech: 6, scrap: 40, caps: 20 } },
       { key: "radio", name: "Radio Beacon", desc: "Recruiting cheaper; raids yield more.", cost: { tech: 10, scrap: 60, caps: 35 } },
@@ -2840,9 +2901,6 @@ function clearActiveFaction(){
     const canAfford = (cost) => Object.entries(cost).every(([k,v]) => S[k] >= v);
 
     for (const t of techs) {
-      if (t.key === "workshop") addSection("Core", "Unlock roles & facilities");
-      if (t.key === "medbay") addSection("Survival", "Radiation & healing");
-      if (t.key === "caravan") addSection("Economy", "Caps flow");
       const owned = !!S.techs[t.key];
       const btn = document.createElement("button");
       btn.className = "btn";
@@ -3217,155 +3275,6 @@ function clearActiveFaction(){
     return (p && p.tiers) ? (p.tiers.find(t => t.tier === tier) || null) : null;
   }
 
-  function previewRewardLine(pathKey, tier){
-    const d = missionDef(pathKey, tier);
-    if (!d || !d.reward) return "None";
-    const parts = Object.entries(d.reward)
-      .filter(([k,v]) => k !== "rep" && v)
-      .map(([k,v]) => `+${v} ${k.toUpperCase()}`);
-    return parts.length ? parts.join(" · ") : "None";
-  }
-
-  // CivCrafter-style: prep in a popup, then run.
-  function showMissionPrepModal(){
-    ensureBattle();
-    ensureExpansion();
-    const pKey = S.battle.path;
-    if (!pKey){ toast("Choose a battle path first.", "warn"); return; }
-    const cleared = S.battle.prog[pKey] || 0;
-    const nextTier = clamp(cleared + 1, 1, 5);
-    const tier = clamp(S.battle.tier || nextTier, 1, nextTier);
-    S.battle.tier = tier;
-    const def = missionDef(pKey, tier);
-    if (!def){ toast("Mission not found.", "warn"); return; }
-
-    const facKey = ownedFactionUnitKey();
-    const facUnit = facKey ? UNIT_DEFS[facKey] : null;
-    const maxMil = S.militia|0;
-    const maxFac = ownedFactionUnitCount();
-
-    if (!S.battle.deploy) S.battle.deploy = { militia: 0, faction: 0 };
-    S.battle.deploy.militia = clamp(S.battle.deploy.militia|0, 0, maxMil);
-    S.battle.deploy.faction = clamp(S.battle.deploy.faction|0, 0, maxFac);
-
-    const enemyPower = Math.round(def.enemy.atk + def.enemy.def + (def.enemy.hp*0.6));
-
-    showModal("Prepare Mission", `
-      <div class="rows animIn" id="prepWrap">
-        <div class="row"><div class="label">Objective</div><div class="value"><b>${escapeHtml(PATHS[pKey].name)}</b> · Tier ${tier}: ${escapeHtml(def.name)} <span class="tag">Next</span></div></div>
-        <div class="row"><div class="label">Requirement</div><div class="value">Deploy <b>${def.req.units}</b> units <span class="tag">Militia + Elites</span></div></div>
-        <div class="row"><div class="label">Enemy</div><div class="value"><span class="chip warn">Power <b>${enemyPower}</b></span> ${statChipsHTML(def.enemy.atk, def.enemy.def, def.enemy.hp)}</div></div>
-        <div class="divider"></div>
-
-        <div class="row">
-          <div style="min-width:0;">
-            <div class="label">Militia</div>
-            <div class="miniHint">ATK ${UNIT_DEFS.militia.atk} · DEF ${UNIT_DEFS.militia.def} · HP ${UNIT_DEFS.militia.hp}</div>
-          </div>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <button class="closeBtn stepBtn" id="prepMilMinus">-</button>
-            <span class="tag" id="prepMilVal" style="min-width:52px; text-align:center;">${S.battle.deploy.militia}/${maxMil}</span>
-            <button class="closeBtn stepBtn" id="prepMilPlus">+</button>
-          </div>
-        </div>
-
-        <div class="row">
-          <div style="min-width:0;">
-            <div class="label">${facUnit ? escapeHtml(facUnit.name) : "Faction Unit"}</div>
-            <div class="miniHint">${facUnit ? `ATK ${facUnit.atk} · DEF ${facUnit.def} · HP ${facUnit.hp} · ${escapeHtml(facUnit.tag)}` : "Buy your faction unit in the Faction Shop."}</div>
-          </div>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <button class="closeBtn stepBtn" id="prepFacMinus" ${facUnit ? "" : "disabled"}>-</button>
-            <span class="tag" id="prepFacVal" style="min-width:52px; text-align:center;">${S.battle.deploy.faction}/${maxFac}</span>
-            <button class="closeBtn stepBtn" id="prepFacPlus" ${facUnit ? "" : "disabled"}>+</button>
-          </div>
-        </div>
-
-        <div class="row" id="prepPreview"></div>
-
-        <button class="btn" id="prepRun" disabled>
-          <div class="left"><div class="name">Run Mission</div><div class="desc">Commit your forces and resolve the battle</div></div>
-          <small id="prepHint">Need units</small>
-        </button>
-      </div>
-    `);
-
-    function refreshPrep(){
-      const mil = clamp(S.battle.deploy.militia|0, 0, maxMil);
-      const fac = clamp(S.battle.deploy.faction|0, 0, maxFac);
-      S.battle.deploy.militia = mil; S.battle.deploy.faction = fac;
-      if ($("prepMilVal")) $("prepMilVal").textContent = `${mil}/${maxMil}`;
-      if ($("prepFacVal")) $("prepFacVal").textContent = `${fac}/${maxFac}`;
-      const deployed = mil + fac;
-      const you = totalUnitStats(mil, fac);
-      const youPower = Math.round(you.atk + you.def + (you.hp*0.6));
-      const enPower  = enemyPower;
-      const ok = deployed >= def.req.units && deployed > 0;
-      const prev = $("prepPreview");
-      if (prev){
-        prev.innerHTML = `
-          <div class="label">Preview</div>
-          <div class="value">
-            <span class="chip good">Your Power <b>${youPower}</b></span>
-            <span class="chip warn">Enemy Power <b>${enPower}</b></span>
-            <span class="tag">Deployed ${deployed}/${def.req.units}</span>
-          </div>
-        `;
-      }
-      const run = $("prepRun");
-      const hint = $("prepHint");
-      if (run) run.disabled = !ok;
-      if (hint) hint.textContent = ok ? "GO" : `Need ${Math.max(0, def.req.units - deployed)} more`;
-    }
-
-    setTimeout(() => {
-      const milMinus = $("prepMilMinus");
-      const milPlus  = $("prepMilPlus");
-      const facMinus = $("prepFacMinus");
-      const facPlus  = $("prepFacPlus");
-      if (milMinus) milMinus.onclick = () => { S.battle.deploy.militia = (S.battle.deploy.militia|0) - 1; refreshPrep(); queueSave(); };
-      if (milPlus)  milPlus.onclick  = () => { S.battle.deploy.militia = (S.battle.deploy.militia|0) + 1; refreshPrep(); queueSave(); };
-      if (facMinus) facMinus.onclick = () => { S.battle.deploy.faction = (S.battle.deploy.faction|0) - 1; refreshPrep(); queueSave(); };
-      if (facPlus)  facPlus.onclick  = () => { S.battle.deploy.faction = (S.battle.deploy.faction|0) + 1; refreshPrep(); queueSave(); };
-
-      const run = $("prepRun");
-      if (run) run.onclick = () => {
-        const mil = clamp(S.battle.deploy?.militia|0, 0, maxMil);
-        const fac = clamp(S.battle.deploy?.faction|0, 0, maxFac);
-        if ((mil + fac) < def.req.units){ toast(`Need ${def.req.units} units deployed.`, "warn"); return; }
-
-        // Start sim overlay, then resolve + outcome popup.
-        closeModal();
-        const youStats = totalUnitStats(mil, fac);
-        playBattleSim({ title: PATHS[pKey].name, subtitle: `Tier ${tier}: ${def.name}`, you: youStats, enemy: def.enemy });
-
-        setTimeout(() => {
-          const res = resolveMission(pKey, tier, mil, fac);
-          if (!res){ toast("Mission failed to resolve.", "warn"); return; }
-          applyMissionResult(pKey, tier, mil, fac, res);
-
-          const rewardLine = res.win
-            ? (Object.entries(res.reward||{})
-                .filter(([k,v])=>k!=="rep" && v)
-                .map(([k,v])=>`+${v} ${k.toUpperCase()}`)
-                .join(" · ") || "none")
-            : "none";
-
-          const title = `${PATHS[pKey].name} — Tier ${tier}: ${def.name}`;
-          const flavor = battleFlavor(pKey, res.win);
-          addBattleHistory({ ts: now(), win: res.win, title, flavor, deployed: mil+fac, ratio: res.ratio, milLost: res.milLost, facLost: res.facLost, rewardLine });
-          showBattleOutcomePopup({ pathKey: pKey, tier, def, mil, fac, res });
-
-          UI.battleDirty = true;
-          renderLight();
-          queueSave();
-        }, 1300);
-      };
-
-      refreshPrep();
-    }, 0);
-  }
-
   // Deterministic-ish resolution: no dice for win/loss; casualties scale with how close it was.
   function resolveMission(pathKey, tier, mil, fac){
     const d = missionDef(pathKey, tier);
@@ -3459,9 +3368,6 @@ function clearActiveFaction(){
     }
   }
 
-  // Battle UI cache (prevents the after-action log from blinking on every render)
-  let _battleHistKey = null;
-
   function renderBattle(){
     ensureBattle();
     ensureExpansion();
@@ -3487,169 +3393,177 @@ function clearActiveFaction(){
     const p = pKey ? PATHS[pKey] : null;
     const tier = S.battle.tier || 1;
 
-    // Stats summary (CivCrafter-style: compact chips)
+    // Stats summary
     stats.innerHTML = "";
-    const facName = S.factions?.aligned ? (FACTIONS[S.factions.aligned]?.name || S.factions.aligned) : "Unaligned";
+    const facName = S.factions?.aligned ? (FACTIONS[S.factions.aligned]?.name || S.factions.aligned) : "None";
     const yourFac = ownedFactionUnitCount();
-    const cleared = pKey ? (S.battle.prog[pKey]||0) : 0;
+    const rows = [
+      ["Faction", facName, "Alignment"],
+      ["Militia", S.militia|0, "Available"],
+      ["Faction Units", yourFac, "Owned"],
+      ["Campaign Progress", pKey ? `${(S.battle.prog[pKey]||0)}/5` : "0/5", "Tiers cleared"],
+    ];
+    for (const [label, val, tip] of rows){
+      const r = document.createElement("div");
+      r.className = "row";
+      r.innerHTML = `<div class="label">${label}</div><div class="value">${val} <span class="tag">${tip}</span></div>`;
+      stats.appendChild(r);
+    }
 
-    const top = document.createElement("div");
-    top.className = "row";
-    top.innerHTML = `
-      <div class="label">Status</div>
-      <div class="value">
-        <div class="bPills">
-          <span class="chip">${escapeHtml(facName)}</span>
-          <span class="chip">Militia <b>${S.militia|0}</b></span>
-          <span class="chip">Elites <b>${yourFac}</b></span>
-          <span class="chip good">Progress <b>${cleared}/5</b></span>
-        </div>
-      </div>
-    `;
-    stats.appendChild(top);
-
-    // Path selector (CivCrafter-like: compact "battle style" strip)
+    // Path selector
     pathSelect.innerHTML = "";
     const mapFactionToPath = { ncr:"lawful", bos:"militaristic", raiders:"ruthless", followers:"humanitarian", enclave:"militaristic" };
     const aligned = S.factions?.aligned || null;
     const allowed = aligned ? new Set([mapFactionToPath[aligned] || "militaristic"]) : null;
 
-    const pathTitle = document.createElement("div");
-    pathTitle.className = "row";
-    pathTitle.innerHTML = `<div class="label">Battle Style</div><div class="value">Pick how you fight. <span class="tag">Locks to your faction</span></div>`;
-    pathSelect.appendChild(pathTitle);
-
-    const strip = document.createElement("div");
-    strip.className = "row";
-    strip.innerHTML = `<div class="label">Styles</div><div class="value"><div class="miniBtns" id="pathStrip"></div></div>`;
-    pathSelect.appendChild(strip);
-
-    const stripEl = strip.querySelector("#pathStrip");
     for (const key of ["lawful","militaristic","ruthless","humanitarian"]){
       const def = PATHS[key];
-      const locked = allowed && !allowed.has(key);
       const btn = document.createElement("button");
-      btn.className = "miniBtn" + (S.battle.path === key ? " primary" : "");
+      btn.className = "btn";
       btn.dataset.path = key;
+      const locked = allowed && !allowed.has(key);
       btn.disabled = !!locked;
-      btn.textContent = def.name;
-      btn.title = `${def.flavor} (${def.factionHint})`;
-      if (stripEl) stripEl.appendChild(btn);
+      btn.innerHTML = `
+        <div class="left">
+          <div class="name">${def.name} <span class="tag">${def.factionHint}</span></div>
+          <div class="desc">${def.flavor}</div>
+        </div>
+        <small>${locked ? "Locked" : (S.battle.path===key?"Selected":"Choose")}</small>
+      `;
+      if (S.battle.path === key) btn.style.borderColor = "rgba(60,255,122,.85)";
+      pathSelect.appendChild(btn);
     }
 
-    // CivCrafter-style campaign panel: show a 5-step track + only the next objective to run.
+    // Tier list
     tierList.innerHTML = "";
-    deploy.innerHTML = "";
-    // Hide the old inline deploy + launch UI (we run missions from a prep popup now)
-    deploy.style.display = "none";
-    launchBtn.style.display = "none";
-
-    const mDef = (pKey ? missionDef(pKey, tier) : null);
-
     if (!p){
       const r = document.createElement("div");
       r.className = "row";
-      r.innerHTML = `<div class="label">Campaign</div><div class="value">Choose a battle path to start a campaign. <span class="tag">Pick a style</span></div>`;
+      r.innerHTML = `<div class="label">Choose a Path</div><div class="value">Pick how your outpost fights. <span class="tag">Step 1</span></div>`;
       tierList.appendChild(r);
-      descEl.textContent = "Choose a battle path";
-      hintEl.textContent = "";
     } else {
       const cleared = S.battle.prog[pKey] || 0;
-      const nextTier = clamp(cleared + 1, 1, 5);
-      // If player had an invalid tier selected (e.g. locked), snap to next.
-      if (tier > nextTier) S.battle.tier = nextTier;
-
-      const tDef = missionDef(pKey, S.battle.tier || nextTier);
-      const enemyPower = Math.round(tDef.enemy.atk + tDef.enemy.def + (tDef.enemy.hp*0.6));
-
-      // CivCrafter-style: a simple 5-step campaign checklist.
-      // Only the next tier has an action button; completed tiers show DONE; future tiers are locked.
-      const header = document.createElement("div");
-      header.className = "row";
-      header.innerHTML = `
-        <div class="label">Campaign</div>
-        <div class="value">
-          <span class="chip">${escapeHtml(PATHS[pKey].name)}</span>
-          <span class="chip good">Cleared <b>${cleared}</b>/5</span>
-          <div class="miniHint" style="margin-top:6px;">Progress through tiers in order — like a mission track.</div>
-        </div>
-      `;
-      tierList.appendChild(header);
-
-      for (let i=1;i<=5;i++){
-        const defI = missionDef(pKey, i);
-        const done = i <= cleared;
-        const next = i === nextTier;
-        const locked = i > nextTier;
-        const ePow = Math.round(defI.enemy.atk + defI.enemy.def + (defI.enemy.hp*0.6));
-        const row = document.createElement("div");
-        row.className = "row";
-        row.innerHTML = `
-          <div style="min-width:0;">
-            <div style="font-family:var(--mono); color:var(--accent);">Tier ${i}: ${escapeHtml(defI.name)}</div>
-            <div class="miniHint" style="margin-top:4px;">${escapeHtml(defI.flavor || PATHS[pKey].flavor)}</div>
-            <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
-              <span class="chip">Need <b>${defI.req.units}</b> units</span>
-              <span class="chip warn">Enemy <b>${ePow}</b></span>
-              <span class="chip">Reward <b>${escapeHtml(previewRewardLine(pKey, i))}</b></span>
-            </div>
+      for (const t of p.tiers){
+        const locked = (t.tier > cleared + 1);
+        const btn = document.createElement("button");
+        btn.className = "btn";
+        btn.dataset.tier = String(t.tier);
+        btn.disabled = locked;
+        btn.innerHTML = `
+          <div class="left">
+            <div class="name">Tier ${t.tier}: ${t.name}</div>
+            <div class="desc">Requires ${t.req.units} deployed units · Enemy ${statChipsHTML(t.enemy.atk, t.enemy.def, t.enemy.hp)}</div>
           </div>
-          <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
-            ${done ? `<span class="tag" style="border-color:rgba(60,255,122,.35); color:rgba(182,255,204,.95);">DONE</span>` : (next ? `<button class="miniBtn primary" data-bact="prep" data-tier="${i}" style="min-width:140px;">Run</button>` : `<span class="tag">LOCKED</span>`)}
+          <small>${locked ? "Locked" : (tier===t.tier?"Selected":"Select")}</small>
+        `;
+        if (tier === t.tier) btn.style.borderColor = "rgba(60,255,122,.85)";
+        tierList.appendChild(btn);
+      }
+    }
+
+    // Deploy UI
+    deploy.innerHTML = "";
+    const mDef = (pKey ? missionDef(pKey, tier) : null);
+    if (!pKey || !mDef){
+      const r = document.createElement("div");
+      r.className = "row";
+      r.innerHTML = `<div class="label">Deployment</div><div class="value">Select a path and tier to deploy units. <span class="tag">Step 2</span></div>`;
+      deploy.appendChild(r);
+    } else {
+      const facKey = ownedFactionUnitKey();
+      const facUnit = facKey ? UNIT_DEFS[facKey] : null;
+
+      const maxMil = S.militia|0;
+      const maxFac = ownedFactionUnitCount();
+
+      // Clamp
+      S.battle.deploy.militia = clamp(S.battle.deploy.militia|0, 0, maxMil);
+      S.battle.deploy.faction = clamp(S.battle.deploy.faction|0, 0, maxFac);
+
+      const mkRow = (label, key, val, max, subtitle) => {
+        const r = document.createElement("div");
+        r.className = "row";
+        r.innerHTML = `
+          <div style="min-width:0;">
+            <div class="label">${label}</div>
+            <div class="miniHint">${subtitle}</div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <button class="closeBtn" data-deploy="${key}" data-act="minus">-</button>
+            <span class="tag" style="min-width:40px; text-align:center;">${val}/${max}</span>
+            <button class="closeBtn" data-deploy="${key}" data-act="plus">+</button>
           </div>
         `;
-        tierList.appendChild(row);
-      }
+        return r;
+      };
 
-      descEl.textContent = `Tier ${tDef.tier}: ${tDef.name}`;
-      hintEl.textContent = "Open Prepare to deploy units.";
-    }
-    // After-action reports (flavorful battle log)
-    // NOTE: renderAll() runs frequently; rebuilding this whole section each tick caused a visible blink.
-    // We only re-render when the history actually changes.
-    const hist = (S.battle.history || []).slice(-6).reverse();
-    const histKey = hist.length ? (hist.map(h => h.ts).join(",") + "|" + hist.length) : "empty";
-    if (histKey !== _battleHistKey){
-      _battleHistKey = histKey;
-      report.innerHTML = "";
+      deploy.appendChild(mkRow("Militia", "militia", S.battle.deploy.militia, maxMil, `${statChipsHTML(UNIT_DEFS.militia.atk, UNIT_DEFS.militia.def, UNIT_DEFS.militia.hp)}`));
 
-      if (hist.length){
-        const head = document.createElement("div");
-        head.className = "row";
-        head.innerHTML = `<div class="label">After-Action</div><div class="value">Recent field reports. <span class="tag">${hist.length} recent</span></div>`;
-        report.appendChild(head);
-
-        for (const h of hist){
-          const row = document.createElement("div");
-          row.className = "row";
-          const tone = h.win ? "good" : "danger";
-          const when = fmtShortTimeAgo(h.ts);
-          const losses = (h.milLost||0) || (h.facLost||0)
-            ? `Losses: -${h.milLost||0} militia${h.facLost?` · -${h.facLost} elite`:``}`
-            : "Losses: none";
-          const rew = h.win && h.rewardLine ? h.rewardLine : (h.win ? "Rewards: minimal" : "Rewards: none");
-          row.innerHTML = `
-            <div class="label">${escapeHtml(when)}</div>
-            <div class="value">
-              <b>${escapeHtml(h.title)}</b> <span class="tag ${tone}">${h.win?"SUCCESS":"FAILED"}</span><br/>
-              ${escapeHtml(h.flavor)}<br/>
-              <span class="tag">Deployed ${h.deployed}</span>
-              <span class="tag">Ratio x${fmt(h.ratio)}</span>
-              <span class="tag">${losses}</span>
-              <span class="tag">${escapeHtml(rew)}</span>
-            </div>
-          `;
-          report.appendChild(row);
-        }
+      if (facUnit){
+        deploy.appendChild(mkRow(facUnit.name, "faction", S.battle.deploy.faction, maxFac, `${statChipsHTML(facUnit.atk, facUnit.def, facUnit.hp)} <span class="tag">${facUnit.tag}</span>`));
       } else {
         const r = document.createElement("div");
         r.className = "row";
-        r.innerHTML = `<div class="label">After-Action</div><div class="value">No reports yet. Launch a mission to generate your first field log. <span class="tag">Campaign</span></div>`;
-        report.appendChild(r);
+        r.innerHTML = `<div class="label">Faction Unit</div><div class="value">Buy your faction unit in the shop to deploy it here. <span class="tag">Shop</span></div>`;
+        deploy.appendChild(r);
       }
+
+      const deployed = (S.battle.deploy.militia|0) + (S.battle.deploy.faction|0);
+      const you = totalUnitStats(S.battle.deploy.militia|0, S.battle.deploy.faction|0);
+      const youLine = `Your Force ${statChipsHTML(you.atk, you.def, you.hp)}`;
+      const enLine = `Enemy ${statChipsHTML(mDef.enemy.atk, mDef.enemy.def, mDef.enemy.hp)}`;
+
+      const info = document.createElement("div");
+      info.className = "row";
+      info.innerHTML = `<div class="label">Battle Preview</div><div class="value">${youLine}<br/>${enLine} <span class="tag">Deployed ${deployed}/${mDef.req.units}</span></div>`;
+      deploy.appendChild(info);
+
+      const canLaunch = deployed >= mDef.req.units && deployed > 0;
+      launchBtn.disabled = !canLaunch;
+      descEl.textContent = `Tier ${tier}: ${mDef.name}`;
+      hintEl.innerHTML = canLaunch
+        ? `Deploy ${mDef.req.units} units or more.`
+        : `Need ${Math.max(0, mDef.req.units - deployed)} more unit(s).`;
+    }
+
+    // After-action reports (flavorful battle log)
+    report.innerHTML = "";
+    const hist = (S.battle.history || []).slice(-6).reverse();
+    if (hist.length){
+      const head = document.createElement("div");
+      head.className = "row";
+      head.innerHTML = `<div class="label">After-Action</div><div class="value">Recent field reports. <span class="tag">${hist.length} recent</span></div>`;
+      report.appendChild(head);
+
+      for (const h of hist){
+        const row = document.createElement("div");
+        row.className = "row";
+        const tone = h.win ? "good" : "danger";
+        const when = fmtShortTimeAgo(h.ts);
+        const losses = (h.milLost||0) || (h.facLost||0)
+          ? `Losses: -${h.milLost||0} militia${h.facLost?` · -${h.facLost} elite`:``}`
+          : "Losses: none";
+        const rew = h.win && h.rewardLine ? h.rewardLine : (h.win ? "Rewards: minimal" : "Rewards: none");
+        row.innerHTML = `
+          <div class="label">${escapeHtml(when)}</div>
+          <div class="value">
+            <b>${escapeHtml(h.title)}</b> <span class="tag ${tone}">${h.win?"SUCCESS":"FAILED"}</span><br/>
+            ${escapeHtml(h.flavor)}<br/>
+            <span class="tag">Deployed ${h.deployed}</span>
+            <span class="tag">Ratio x${fmt(h.ratio)}</span>
+            <span class="tag">${losses}</span>
+            <span class="tag">${escapeHtml(rew)}</span>
+          </div>
+        `;
+        report.appendChild(row);
+      }
+    } else {
+      const r = document.createElement("div");
+      r.className = "row";
+      r.innerHTML = `<div class="label">After-Action</div><div class="value">No reports yet. Launch a mission to generate your first field log. <span class="tag">Campaign</span></div>`;
+      report.appendChild(r);
     }
   }
-
 
 
   function renderActionCosts() {
@@ -3667,121 +3581,27 @@ function clearActiveFaction(){
     if ($("tradeCost")) $("tradeCost").innerHTML = `SCRAP ${tr.scrap}<br/>+CAPS ${tr.capsGain}`;
   }
 
-  function renderTapUI(){
-    const btn = $("btnScavenge");
-    if (!btn) return;
-    const t = now();
-    const onFire = t < (S.tapFireUntil || 0);
-    btn.classList.toggle("onFire", !!onFire);
-
-    // Combo readout lives in the button's <small> so it's obvious without clutter
-    const sm = btn.querySelector("small");
-    if (!sm) return;
-    let combo = (S.tapCombo || 0);
-    if (t - (S.tapComboLast || 0) > 900) combo = 0;
-    if (onFire){
-      sm.innerHTML = `<span class="kbd">tap</span><br/>🔥 OVERDRIVE`;
-    } else if (combo >= 6){
-      sm.innerHTML = `<span class="kbd">tap</span><br/>Combo x${combo}`;
-    } else {
-      sm.innerHTML = `<span class="kbd">tap</span><br/>+ loot`;
-    }
-  }
-
-  
-function uiPolishApply(){
-  // Add "section" styling to key panels without rewriting templates.
-  const ids = ["resourcePanel","buildPanel","techPanel","factionPanel","workerPanel","battlePanel","logPanel"];
-  for (const id of ids){
-    const el = $(id);
-    if (el && !el.classList.contains("section")) el.classList.add("section");
-    if (el) el.classList.add("listTight");
-  }
-}
-
-function renderAll() {
-    // Full render is used on screen switches and big UI actions.
+  function renderAll() {
     renderTopPills();
-    if (UI.screen === "clicker"){
-      renderActionCosts();
-      renderTapUI();
-      renderWorkers();
-    } else if (UI.screen === "build"){
-      renderBuildings();
-    } else if (UI.screen === "tech"){
-      renderTech();
-    } else if (UI.screen === "factions"){
-      renderFactions();
-    } else if (UI.screen === "battle"){
-      renderBattle();
-      UI.battleDirty = false;
-    } else if (UI.screen === "log"){
-      renderStatsAndLog();
-    }
-  }
-
-  // Light render used by tick() to avoid rebuilding whole screens every frame.
-  function renderLight(){
-    renderTopPills();
-    if (UI.screen === "clicker"){
-      renderActionCosts();
-      renderTapUI();
-      // Workers are interactive; keep them fresh but only on this screen.
-      renderWorkers();
-    } else if (UI.screen === "build"){
-      renderBuildings();
-    } else if (UI.screen === "tech"){
-      renderTech();
-    } else if (UI.screen === "factions"){
-      renderFactions();
-    } else if (UI.screen === "battle"){
-      // Battle screen: NEVER rebuild every tick (causes blinking). Only render when battle state actually changes.
-      const sig = [
-        S.battle?.path || "",
-        S.battle?.tier || 0,
-        JSON.stringify(S.battle?.prog || {}),
-        (S.battle?.history || []).length,
-        S.militia|0,
-        ownedFactionUnitCount(),
-      ].join("|");
-      if (UI.battleDirty || sig !== UI.battleSig){
-        UI.battleSig = sig;
-        renderBattle();
-        UI.battleDirty = false;
-      }
-    } else if (UI.screen === "log"){
-      renderStatsAndLog();
-    }
+    renderActionCosts();
+    renderWorkers();
+    renderBuildings();
+    renderTech();
+    renderBattle();
+    renderFactions();
+renderStatsAndLog();
   }
 
   // ---------- Core actions ----------
   function scavengeTap(srcEl=null){
-    // ---- Tap combo / overdrive ----
-    const t = now();
-    const gap = t - (S.tapComboLast || 0);
-    if (gap <= 900) {
-      S.tapCombo = Math.min(40, (S.tapCombo || 0) + 1);
-    } else {
-      S.tapCombo = 1;
-    }
-    S.tapComboLast = t;
-
-    // After 20 consecutive taps, trigger a short "on fire" window
-    if ((S.tapCombo || 0) >= 20) {
-      S.tapFireUntil = Math.max(S.tapFireUntil || 0, t + 5500);
-    }
-    const onFire = t < (S.tapFireUntil || 0);
-
     const baseScrap = 3 + Math.floor(S.scav*0.15);
     const baseFood = 1 + (Math.random() < 0.45 ? 1 : 0);
     const water = (Math.random() < 0.18) ? 1 : 0;
 
-    const combo = (S.tapCombo || 0);
-    const comboMult = 1 + Math.min(0.25, combo * 0.01) + (onFire ? 0.35 : 0); // up to +25% + fire burst
-    const mm = momentumMult();
-    const gotScrap = Math.max(1, Math.floor(baseScrap * mm * comboMult));
-    const gotFood  = Math.max(0, Math.floor(baseFood  * mm * comboMult));
-    const gotWater = Math.max(0, Math.floor(water     * mm * comboMult));
+        const mm = momentumMult();
+    const gotScrap = Math.floor(baseScrap * mm);
+    const gotFood  = Math.floor(baseFood * mm);
+    const gotWater = Math.floor(water * mm);
 
     S.scrap += gotScrap;
     S.food  += gotFood;
@@ -3789,21 +3609,12 @@ function renderAll() {
 
     addMomentum(1);
 
-    // Tech chance scales "forever" (slowly) with progression and active play.
-    // Clamped so it never becomes guaranteed every tap.
-    const techChance = clamp(
-      (S.techs.workshop ? 0.08 : 0.03)
-      + (S.day * 0.0006)
-      + (combo * 0.003)
-      + (onFire ? 0.06 : 0),
-      0,
-      0.65
-    );
+    const techChance = (S.techs.workshop ? 0.08 : 0.03) + Math.min(0.05, S.day*0.002);
     if (Math.random() < techChance) { S.tech += 1; log(`You found a pre‑war component. +1 TECH.`); }
 
     S.rad = clamp(S.rad + (Math.random() < 0.25 ? 0.2 : 0), 0, 100);
-    popNearEl(srcEl || $("btnScavenge"), `+${gotScrap} Scrap${gotFood?` · +${gotFood} Food`:``}${gotWater?` · +${gotWater} Water`:``}${onFire?` · 🔥`:``}`, "good");
-    log(`Scavenged the ruins: +${gotScrap} Scrap, +${gotFood} Food${gotWater?`, +${gotWater} Water`:``}${onFire?` (Overdrive)`:``}.`);
+    popNearEl(srcEl || $("btnScavenge"), `+${gotScrap} Scrap${gotFood?` · +${gotFood} Food`:``}${gotWater?` · +${gotWater} Water`:``}`, "good");
+        log(`Scavenged the ruins: +${gotScrap} Scrap, +${gotFood} Food${gotWater?`, +${gotWater} Water`:``}.`);
     incQuest("scavenge", 1);
   }
 
@@ -4020,9 +3831,7 @@ function renderAll() {
 
     if (Math.random() < 0.01) save();
 
-    // Light UI update: never rebuild every screen every 250ms.
-    // Use the shared renderLight() which is battle-safe (no blinking).
-    renderLight();
+    renderAll();
   }
 
   // ---------- Save/Load/Offline ----------
@@ -4130,12 +3939,10 @@ function renderAll() {
     } catch { return null; }
   }
 
-    function applyOfflineProgress(showPopup=false) {
+  function applyOfflineProgress() {
     const t0 = S.t || now();
     const elapsed = clamp((now() - t0) / 1000, 0, 60 * 60 * 4);
-    if (elapsed < 2) return null;
-
-    const before = { scrap:S.scrap, food:S.food, water:S.water, tech:S.tech, caps:S.caps, rad:S.rad, day:S.day };
+    if (elapsed < 2) return;
 
     const steps = 120;
     const dt = elapsed / steps;
@@ -4157,233 +3964,21 @@ function renderAll() {
       S.day += dt * 0.02;
     }
 
-    const gains = {
-      elapsed,
-      scrap: Math.max(0, S.scrap - before.scrap),
-      food:  Math.max(0, S.food  - before.food),
-      water: Math.max(0, S.water - before.water),
-      tech:  Math.max(0, S.tech  - before.tech),
-      caps:  Math.max(0, S.caps  - before.caps),
-      rad:   S.rad - before.rad,
-    };
-
-    // Keep old log line for desktop/dev, but also optionally show a mobile-friendly popup.
     log(`You were away for ${Math.floor(elapsed/60)}m. The outpost kept running.`, "warn");
+    // Contracts removed
     checkOps();
-
-    if (showPopup){
-      const mins = Math.floor(elapsed/60);
-      const secs = Math.floor(elapsed % 60);
-      const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-      const parts = [];
-      if (gains.scrap >= 0.5) parts.push(`<span class="chip">SCRAP <b>+${fmt(gains.scrap)}</b></span>`);
-      if (gains.food  >= 0.5) parts.push(`<span class="chip">FOOD <b>+${fmt(gains.food)}</b></span>`);
-      if (gains.water >= 0.5) parts.push(`<span class="chip">WATER <b>+${fmt(gains.water)}</b></span>`);
-      if (gains.tech  >= 0.25) parts.push(`<span class="chip">TECH <b>+${fmt(gains.tech)}</b></span>`);
-      if (gains.caps  >= 0.25) parts.push(`<span class="chip">CAPS <b>+${fmt(gains.caps)}</b></span>`);
-      // Rad is a penalty; show only if it moved meaningfully.
-      if (Math.abs(gains.rad) >= 0.25) parts.push(`<span class="chip warn">RAD <b>${gains.rad>0?'+':''}${fmt(gains.rad)}%</b></span>`);
-
-      showModal("While you were away…", `
-        <div class="rows" style="gap:12px;">
-          <div class="row">
-            <div class="label">Time Away</div>
-            <div class="value">${escapeHtml(timeStr)} <span class="tag">Offline earnings</span></div>
-          </div>
-
-          <div class="row">
-            <div class="label">Gains</div>
-            <div class="value">
-              <div class="bPills" style="justify-content:flex-end;">
-                ${parts.length ? parts.join("") : `<span class="tag">No meaningful gains</span>`}
-              </div>
-            </div>
-          </div>
-
-          <button class="btn" id="btnOfflineOk">
-            <div class="left">
-              <div class="name">Back to the Wasteland</div>
-              <div class="desc">Continue where you left off</div>
-            </div>
-            <small>OK</small>
-          </button>
-        </div>
-      `);
-
-      setTimeout(() => {
-        const b = $("btnOfflineOk");
-        if (b) b.onclick = () => closeModal();
-      }, 0);
-    }
-
-    return gains;
   }
 
-  
-  // ---------- Mobile-friendly offline earnings ----------
-  // When the app/tab goes to background, remember the timestamp.
-  // When it comes back, apply offline progress and show a summary popup.
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden){
-      // mark last active moment
-      S.t = now();
-      queueSave();
-    } else {
-      // returning to the game
-      const gains = applyOfflineProgress(true);
-      if (gains) { renderAll(); queueSave(); }
-    }
-  });
-  window.addEventListener("focus", () => {
-    // Some mobile webviews don't fire visibilitychange reliably.
-    const gains = applyOfflineProgress(true);
-    if (gains) { renderAll(); queueSave(); }
-  });
-
-// ---------- Event wiring ----------
+  // ---------- Event wiring ----------
   bindTap($("btnScavenge"), (e) => { flashBtn(e.currentTarget); haptic(8); scavengeTap(e.currentTarget); renderAll(); });
   bindTap($("btnPurify"), (e) => { flashBtn(e.currentTarget); haptic(8); purify(e.currentTarget); renderAll(); });
   bindTap($("btnRecruit"), (e) => { flashBtn(e.currentTarget); haptic(8); recruit(e.currentTarget); renderAll(); });
   bindTap($("btnHealRad"), (e) => { flashBtn(e.currentTarget); haptic(8); decontaminate(e.currentTarget); renderAll(); });
   bindTap($("btnTrade"), (e) => { flashBtn(e.currentTarget); haptic(8); tradeScrap(e.currentTarget); renderAll(); });
 
-  // Battle: Campaign Paths wiring
-  const pathEl = $("battlePathSelect");
-  if (pathEl){
-    pathEl.addEventListener("click", (e) => {
-      const btn = e.target.closest("button[data-path]");
-      if (!btn || btn.disabled) return;
-      ensureBattle();
-      S.battle.path = btn.dataset.path;
-      S.battle.tier = 1;
-      S.battle.deploy = { militia: 0, faction: 0 };
-      UI.battleDirty = true;
-      renderLight();
-      queueSave();
-    });
-  }
+  // Battle: Campaign Paths wiring removed (replaced by Automated Raids UI)
 
-  const tierEl = $("battleTierList");
-  if (tierEl){
-    tierEl.addEventListener("click", (e) => {
-      const prep = e.target.closest("button[data-bact='prep']");
-      if (prep){
-        flashBtn(prep); haptic(10);
-        // Prep buttons in the checklist carry the tier they belong to.
-        const ti = parseInt(prep.dataset.tier || "", 10);
-        if (isFinite(ti) && ti >= 1 && ti <= 5){
-          ensureBattle();
-          S.battle.tier = ti;
-          UI.battleDirty = true;
-        }
-        showMissionPrepModal();
-        return;
-      }
-
-      const btn = e.target.closest("button[data-tier]");
-      if (!btn || btn.disabled) return;
-      ensureBattle();
-      const want = parseInt(btn.dataset.tier, 10) || 1;
-      // Only allow selecting up to the next available tier (CivCrafter feel)
-      const pKey = S.battle.path;
-      const cleared = pKey ? (S.battle.prog[pKey] || 0) : 0;
-      const next = clamp(cleared + 1, 1, 5);
-      S.battle.tier = clamp(want, 1, next);
-      UI.battleDirty = true;
-      renderLight();
-      queueSave();
-    });
-  }
-
-  const depEl = $("battleDeploy");
-  if (depEl){
-    depEl.addEventListener("click", (e) => {
-      const btn = e.target.closest("button[data-deploy]");
-      if (!btn) return;
-      ensureBattle();
-      const k = btn.dataset.deploy;
-      const act = btn.dataset.act;
-      if (!k || !act) return;
-      const delta = act === "plus" ? 1 : -1;
-      if (!S.battle.deploy) S.battle.deploy = { militia: 0, faction: 0 };
-      S.battle.deploy[k] = (S.battle.deploy[k]||0) + delta;
-      UI.battleDirty = true;
-      renderLight();
-      queueSave();
-    });
-  }
-
-  bindTap($("btnLaunchMission"), (e) => {
-    flashBtn(e.currentTarget); haptic(12);
-    ensureBattle();
-    const p = S.battle.path;
-    const t = S.battle.tier || 1;
-    const mil = clamp(S.battle.deploy?.militia|0, 0, S.militia|0);
-    const fac = clamp(S.battle.deploy?.faction|0, 0, ownedFactionUnitCount());
-    const def = p ? missionDef(p, t) : null;
-    if (!p || !def){ toast("Choose a path and tier first.", "warn"); return; }
-    if ((mil + fac) < def.req.units){ toast(`Need ${def.req.units} units deployed.`, "warn"); return; }
-
-    // Smooth battle initiation: show a short simulation overlay, then apply deterministic result
-    const youStats = totalUnitStats(mil, fac);
-    playBattleSim({
-      title: PATHS[p].name,
-      subtitle: `Tier ${t}: ${def.name}`,
-      you: youStats,
-      enemy: def.enemy
-    });
-
-    const launch = e.currentTarget;
-    if (launch) launch.disabled = true;
-
-    setTimeout(() => {
-      const res = resolveMission(p, t, mil, fac);
-      if (!res){ toast("Mission failed to resolve.", "warn"); if (launch) launch.disabled = false; return; }
-      applyMissionResult(p, t, mil, fac, res);
-
-      const rewardLine = res.win
-        ? (Object.entries(res.reward||{})
-            .filter(([k,v])=>k!=="rep" && v)
-            .map(([k,v])=>`+${v} ${k.toUpperCase()}`)
-            .join(" · ") || "none")
-        : "none";
-
-      const title = `${PATHS[p].name} — Tier ${t}: ${def.name}`;
-      const flavor = battleFlavor(p, res.win);
-
-      addBattleHistory({
-        ts: now(),
-        win: res.win,
-        title,
-        flavor,
-        deployed: (mil + fac),
-        ratio: res.ratio,
-        milLost: res.milLost||0,
-        facLost: res.facLost||0,
-        rewardLine: res.win ? `Rewards: ${rewardLine}` : "Rewards: none"
-      });
-
-      const lostTxt = (res.milLost||0) || (res.facLost||0)
-        ? `Losses: -${res.milLost||0} militia${res.facLost?` · -${res.facLost} elite`:``}`
-        : "Losses: none";
-      log(`${title}. ${res.win?"SUCCESS":"FAILED"}. ${lostTxt}.`, res.win ? "" : "danger");
-
-      // Reset deployment after mission
-      S.battle.deploy = { militia: 0, faction: 0 };
-
-      // Close the sim overlay and show a proper outcome popup.
-      try { if (simModal && simModal.open) simModal.close(); } catch {}
-      showBattleOutcomePopup({ pathKey: p, tier: t, def, mil, fac, res });
-
-      // Re-enable launching
-      if (launch) launch.disabled = false;
-
-      renderAll();
-      queueSave();
-    }, 1150);
-  });
-
-  $("workerPanel").addEventListener("click", (e) => {
+$("workerPanel").addEventListener("click", (e) => {
     const btn = e.target.closest("button");
     if (!btn) return;
 
@@ -4638,6 +4233,29 @@ $("factionPanel").addEventListener("click", (e) => {
     try { simModal.close(); } catch {}
   });
 
+
+$("battlePanel").addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  const act = btn.dataset.bact;
+  if (!act) return;
+
+  if (act === "unlock") unlockCombat();
+
+  if (act === "inc") recruitUnit(btn.dataset.unit, +1);
+  if (act === "dec") recruitUnit(btn.dataset.unit, -1);
+
+  if (act === "find") { rollRaidTarget(); renderAll(); queueSave(); }
+  if (act === "reroll") { rollRaidTarget(); renderAll(); queueSave(); }
+
+  if (act === "toggleHistory") {
+    S.uiBattleShowHistory = !S.uiBattleShowHistory;
+    renderAll(); queueSave();
+  }
+
+  if (act === "raid") simulateRaid();
+});
+
   function openSim(title, html){
     if (!simModal || !simBody || !simTitle || !simClose) return;
     simTitle.textContent = title || "Simulating Battle";
@@ -4776,7 +4394,7 @@ $("factionPanel").addEventListener("click", (e) => {
   ensureQuest();
   ensureFactions();
   ensureContract();
-  applyOfflineProgress(true);
+  applyOfflineProgress();
   renderAll();
   log("Outpost initialized. The wasteland waits…");
   log("Early tip: Use Trade Scrap to get Caps for your first Tin Shacks (housing) and Turrets.", "warn");
